@@ -1,17 +1,5 @@
 import { useState, useCallback } from "react";
-
-// ── Constants ────────────────────────────────────────────────────────────────
-
-export const CARD_PAIRS = [
-  { emoji: "🍎", label: "Apple" },
-  { emoji: "🍌", label: "Banana" },
-  { emoji: "🍊", label: "Orange" },
-  { emoji: "🍓", label: "Strawberry" },
-  { emoji: "🍇", label: "Grapes" },
-  { emoji: "🍉", label: "Watermelon" },
-  { emoji: "🍑", label: "Peach" },
-  { emoji: "🥝", label: "Kiwi" },
-];
+import { CARD_PAIRS } from "../../data/flipFlopData";
 
 function initializeGame() {
   const cards = [];

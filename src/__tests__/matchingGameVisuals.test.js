@@ -13,9 +13,9 @@
 // them in one place, so a future content edit can't reintroduce it.
 import { DOG_PAIRS } from '../data/puppyFetchData';
 import { CARD_SETS } from '../data/memoryCards';
-import { CAT_PAIRS } from '../components/catmatch/CatMatchBoard';
-import { CARD_PAIRS } from '../components/flipflop/FlipFlopBoard';
-import { COCKTAILS } from '../components/martinimatch/MartiniMatchBoard';
+import { CAT_PAIRS } from '../data/catMatchData';
+import { CARD_PAIRS } from '../data/flipFlopData';
+import { COCKTAILS } from '../data/martiniMatchData';
 
 function expectUniqueEmoji(pairs) {
   const emojis = pairs.map((p) => p.emoji);
