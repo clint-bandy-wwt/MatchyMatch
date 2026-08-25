@@ -1,10 +1,16 @@
+// Both colors use the solid "black" glyph set (rather than the hollow
+// "white" code points, U+2654-2659) and are told apart with CSS fill +
+// stroke instead (see .piece-white / .piece-black in chess.css). This is
+// defensive, not the fix for a specific bug: the hollow set renders fine
+// in mainstream fonts, but its font coverage is less universal, so this
+// avoids depending on it.
 const PIECE_SYMBOLS = {
-  pawn: { white: '♙', black: '♟' },
-  rook: { white: '♖', black: '♜' },
-  knight: { white: '♘', black: '♞' },
-  bishop: { white: '♗', black: '♝' },
-  queen: { white: '♕', black: '♛' },
-  king: { white: '♔', black: '♚' },
+  pawn: '♟',
+  rook: '♜',
+  knight: '♞',
+  bishop: '♝',
+  queen: '♛',
+  king: '♚',
 }
 
 export default function Square({
@@ -25,7 +31,7 @@ export default function Square({
     .filter(Boolean)
     .join(' ')
 
-  const symbol = piece ? PIECE_SYMBOLS[piece.type][piece.color] : ''
+  const symbol = piece ? PIECE_SYMBOLS[piece.type] : ''
 
   return (
     <button

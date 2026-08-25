@@ -1,10 +1,13 @@
+// Same solid glyph for both colors as Square.jsx, for consistency — color
+// is applied via CSS (.piece-white / .piece-black) rather than switching
+// to the hollow "white" code points.
 const PIECE_SYMBOLS = {
-  pawn: { white: '♙', black: '♟' },
-  rook: { white: '♖', black: '♜' },
-  knight: { white: '♘', black: '♞' },
-  bishop: { white: '♗', black: '♝' },
-  queen: { white: '♕', black: '♛' },
-  king: { white: '♔', black: '♚' },
+  pawn: '♟',
+  rook: '♜',
+  knight: '♞',
+  bishop: '♝',
+  queen: '♛',
+  king: '♚',
 }
 
 const PIECE_VALUES = {
@@ -27,7 +30,7 @@ export default function CapturedPieces({ capturedPieces }) {
   const renderPieces = (pieces) => {
     return pieces.map((piece, idx) => (
       <span key={idx} className={`captured-piece piece-${piece.color}`}>
-        {PIECE_SYMBOLS[piece.type][piece.color]}
+        {PIECE_SYMBOLS[piece.type]}
       </span>
     ))
   }

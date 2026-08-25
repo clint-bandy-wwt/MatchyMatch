@@ -42,7 +42,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(2rem, 8vw, 3.5rem);
+  /* The board is capped at 500px wide for 8 columns, so a square is
+     never wider than 62.5px — but this clamp's old 3.5rem (56px) max,
+     combined with the default line-height, produced a line box around
+     84px tall on wide viewports (8vw already exceeds that cap well
+     before typical desktop widths). Since each square only sizes itself
+     from its *width* (aspect-ratio: 1), that made rows taller than
+     columns, and the ~2 extra rows' worth of overflow was silently
+     clipped by the board's overflow: hidden — which is why white's back
+     two ranks were invisible. line-height: 1 plus a lower max keep the
+     glyph's box within the square at every width this clamp can reach. */
+  line-height: 1;
+  font-size: clamp(1.5rem, 6vw, 2.25rem);
   position: relative;
   transition: all 0.2s ease;
   padding: 0;
@@ -87,16 +98,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   user-select: none;
+}
 
-  &.piece-white {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  }
+/* Both colors render the same solid glyph shape (see Square.jsx and
+   CapturedPieces.jsx) and are told apart by fill + stroke here, not by
+   font glyph support — top-level (not nested under .piece) so this also
+   covers the .captured-piece spans in the captured-pieces panel. */
+.piece-white {
+  color: #f7f3ea;
+  -webkit-text-stroke: 1.5px #3a3a3a;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
 
-  &.piece-black {
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  }
+.piece-black {
+  color: #1a1a1a;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 /* Right Panel */
