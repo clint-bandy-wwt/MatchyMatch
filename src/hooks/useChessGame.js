@@ -1,5 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { initializeBoard, isValidMove, makeMove, isCheck, isCheckmate, isStalemate, getValidMoves } from '../utils/chessRules'
+import { getAIMove } from '../utils/chessAI'
+
+const AI_COLOR = 'black'
+const AI_THINK_DELAY = 500
 
 export function useChessGame() {
   const [board, setBoard] = useState(() => initializeBoard())
@@ -8,6 +12,10 @@ export function useChessGame() {
   const [moveHistory, setMoveHistory] = useState([])
   const [capturedPieces, setCapturedPieces] = useState({ white: [], black: [] })
   const [gameStatus, setGameStatus] = useState('active')
+  const [vsAI, setVsAI] = useState(true)
+
+  const isAIThinking =
+    vsAI && turn === AI_COLOR && gameStatus !== 'checkmate' && gameStatus !== 'stalemate'
 
   const updateGameStatus = useCallback((newBoard, newTurn) => {
     if (isCheckmate(newBoard, newTurn)) {
@@ -28,6 +36,7 @@ export function useChessGame() {
   const selectSquare = useCallback(
     (square) => {
       if (gameStatus === 'checkmate' || gameStatus === 'stalemate') return
+      if (vsAI && turn === AI_COLOR) return
 
       const piece = board[square.row][square.col]
 
@@ -49,7 +58,7 @@ export function useChessGame() {
         setSelectedSquare(null)
       }
     },
-    [board, selectedSquare, turn, gameStatus]
+    [board, selectedSquare, turn, gameStatus, vsAI]
   )
 
   const makeGameMove = useCallback(
@@ -92,6 +101,34 @@ export function useChessGame() {
     },
     [board, selectedSquare, turn, updateGameStatus]
   )
+
+  // Let the AI reply once it's the AI's turn.
+  useEffect(() => {
+    if (!isAIThinking) return
+
+    const id = setTimeout(() => {
+      const aiMove = getAIMove(board, AI_COLOR)
+      if (!aiMove) return
+
+      const { newBoard, capturedPiece, notation } = makeMove(board, aiMove.from, aiMove.to)
+      setBoard(newBoard)
+
+      if (capturedPiece) {
+        setCapturedPieces((prev) => ({
+          ...prev,
+          [AI_COLOR]: [...prev[AI_COLOR], capturedPiece],
+        }))
+      }
+
+      setMoveHistory((prev) => [...prev, { from: aiMove.from, to: aiMove.to, notation }])
+
+      const newTurn = AI_COLOR === 'white' ? 'black' : 'white'
+      setTurn(newTurn)
+      updateGameStatus(newBoard, newTurn)
+    }, AI_THINK_DELAY)
+
+    return () => clearTimeout(id)
+  }, [isAIThinking, board, updateGameStatus])
 
   const undoMove = useCallback(() => {
     if (moveHistory.length === 0) return
@@ -137,6 +174,14 @@ export function useChessGame() {
     setGameStatus('active')
   }, [])
 
+  const changeGameMode = useCallback(
+    (nextVsAI) => {
+      setVsAI(nextVsAI)
+      resetGame()
+    },
+    [resetGame]
+  )
+
   return {
     board,
     turn,
@@ -145,9 +190,13 @@ export function useChessGame() {
     validMoves,
     moveHistory,
     capturedPieces,
+    vsAI,
+    isAIThinking,
+    aiColor: AI_COLOR,
     selectSquare,
     makeMove: makeGameMove,
     undoMove,
     resetGame,
+    changeGameMode,
   }
 }

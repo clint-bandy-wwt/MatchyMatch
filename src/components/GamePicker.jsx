@@ -191,7 +191,7 @@ const GAMES = [
   {
     id: 'chess',
     name: 'Chess',
-    description: 'Play the classic game of chess against a friend',
+    description: 'Play the classic game of chess against the AI, or a friend',
     tag: 'Strategy',
   },
   {

@@ -22,8 +22,18 @@ function playMove(container, from, to) {
   fireEvent.click(square(container, to));
 }
 
+// These tests drive both sides by hand, so they need 2-player mode —
+// the default vs-AI mode won't let clicks move the AI's (black) pieces.
+function enableTwoPlayerMode(container) {
+  const toggle = Array.from(container.querySelectorAll('button')).find((b) =>
+    b.textContent.includes('2 Player')
+  );
+  fireEvent.click(toggle);
+}
+
 test('undo after two moves does not throw and reverts the last move', () => {
   const { container } = render(<ChessBoard />);
+  enableTwoPlayerMode(container);
 
   playMove(container, 'e2', 'e4');
   playMove(container, 'd7', 'd5');
@@ -42,6 +52,7 @@ test('undo after two moves does not throw and reverts the last move', () => {
 
 test('undo can be clicked repeatedly back to the start without throwing', () => {
   const { container } = render(<ChessBoard />);
+  enableTwoPlayerMode(container);
 
   playMove(container, 'e2', 'e4');
   playMove(container, 'd7', 'd5');
@@ -61,6 +72,7 @@ test('undo can be clicked repeatedly back to the start without throwing', () => 
 
 test('captured pieces are attributed to the capturing side, not swapped', () => {
   const { container } = render(<ChessBoard />);
+  enableTwoPlayerMode(container);
 
   playMove(container, 'e2', 'e4');
   playMove(container, 'd7', 'd5');

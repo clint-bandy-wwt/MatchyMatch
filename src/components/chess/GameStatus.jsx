@@ -1,4 +1,4 @@
-export default function GameStatus({ turn, gameStatus, moveCount }) {
+export default function GameStatus({ turn, gameStatus, moveCount, isAIThinking }) {
   const getStatusMessage = () => {
     if (gameStatus === 'checkmate') {
       const winner = turn === 'white' ? 'Black' : 'White'
@@ -6,6 +6,9 @@ export default function GameStatus({ turn, gameStatus, moveCount }) {
     }
     if (gameStatus === 'stalemate') {
       return 'Draw - Stalemate'
+    }
+    if (isAIThinking) {
+      return 'AI is thinking...'
     }
     if (gameStatus === 'check') {
       return `${turn.charAt(0).toUpperCase() + turn.slice(1)} in check!`
@@ -16,6 +19,7 @@ export default function GameStatus({ turn, gameStatus, moveCount }) {
   const getStatusEmoji = () => {
     if (gameStatus === 'checkmate') return '🏆'
     if (gameStatus === 'stalemate') return '🤝'
+    if (isAIThinking) return '🤖'
     if (gameStatus === 'check') return '⚠️'
     return '♟️'
   }

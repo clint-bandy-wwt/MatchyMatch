@@ -30,7 +30,13 @@ test('no rendered piece uses the hollow "white" glyph set, on the board or in ca
   expect(whitePawnGlyph).toBe(blackPawnGlyph);
 
   // Capture a piece (white takes black's d-pawn) and check the captured
-  // panel too.
+  // panel too. Switch to 2-player mode first so clicks can move black's
+  // pieces directly, instead of the default vs-AI mode moving them.
+  const twoPlayerToggle = Array.from(container.querySelectorAll('button')).find((b) =>
+    b.textContent.includes('2 Player')
+  );
+  fireEvent.click(twoPlayerToggle);
+
   fireEvent.click(square('e2'));
   fireEvent.click(square('e4'));
   fireEvent.click(square('d7'));

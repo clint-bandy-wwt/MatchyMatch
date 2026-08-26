@@ -18,10 +18,13 @@ export default function ChessBoard() {
     validMoves,
     moveHistory,
     capturedPieces,
+    vsAI,
+    isAIThinking,
     selectSquare,
     makeMove,
     undoMove,
     resetGame,
+    changeGameMode,
   } = useChessGame()
 
   const [message, setMessage] = useState('')
@@ -44,6 +47,7 @@ export default function ChessBoard() {
 
   const handleSquareClick = (row, col) => {
     if (gameStatus === 'checkmate' || gameStatus === 'stalemate') return
+    if (isAIThinking) return
 
     const square = { row, col }
 
@@ -72,6 +76,12 @@ export default function ChessBoard() {
     setShowConfetti(false)
   }
 
+  const handleModeChange = (nextVsAI) => {
+    changeGameMode(nextVsAI)
+    setMessage('')
+    setShowConfetti(false)
+  }
+
   return (
     <div className="chess-container">
       <div className="chess-main">
@@ -92,6 +102,7 @@ export default function ChessBoard() {
             turn={turn}
             gameStatus={gameStatus}
             moveCount={moveHistory.length}
+            isAIThinking={isAIThinking}
           />
 
           {/* Captured Pieces */}
@@ -99,6 +110,8 @@ export default function ChessBoard() {
 
           {/* Controls */}
           <GameControls
+            vsAI={vsAI}
+            onModeChange={handleModeChange}
             onUndo={handleUndo}
             onReset={handleReset}
             canUndo={moveHistory.length > 0}
