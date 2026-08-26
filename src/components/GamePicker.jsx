@@ -251,6 +251,7 @@ const GAMES = [
     isNew: true,
   },
 
+]
 // Two-color gradients cycled across the grid, adapted from the Arcade
 // design spec's tile palette.
 const TILES = [
