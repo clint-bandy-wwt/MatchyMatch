@@ -41,6 +41,7 @@ import LatchamBoard from './components/latcham/LatchamBoard'
 import GeoffsGeometryBoard from './components/geoffsgeometry/GeoffsGeometryBoard'
 import GreatWallBoard from './components/greatwall/GreatWallBoard'
 import SamIAmBoard from './components/samiam/SamIAmBoard'
+import FroggerBoard from './components/frogger/FroggerBoard'
 import { puzzles } from './data/puzzles'
 
 const envIndex = parseInt(import.meta.env.VITE_PUZZLE_INDEX, 10)
