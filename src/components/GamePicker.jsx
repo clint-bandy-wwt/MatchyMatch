@@ -230,6 +230,12 @@ const GAMES = [
     isNew: true,
   },
   {
+    id: 'oregontrail',
+    name: 'Oregon Trail',
+    description: 'Journey 2,000 miles to Oregon — manage supplies and survive the trail!',
+    tag: 'Adventure',
+  },
+  {
     id: 'greatwall',
     name: 'The Great Wall',
     description: 'Break down the wall, one brick at a time!',

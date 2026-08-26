@@ -1,0 +1,526 @@
+.oregon-trail {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  font-family: var(--font-body);
+}
+
+/* Intro Screen */
+.oregon-intro {
+  text-align: center;
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.oregon-intro h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+.oregon-intro-text {
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+.oregon-intro-text p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.oregon-starting-supplies {
+  background: var(--bg-tertiary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 2rem auto;
+  max-width: 400px;
+}
+
+.oregon-starting-supplies h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.oregon-starting-supplies ul {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+}
+
+.oregon-starting-supplies li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.oregon-starting-supplies li:last-child {
+  border-bottom: none;
+}
+
+/* Buttons */
+.oregon-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.oregon-btn:hover {
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+}
+
+.oregon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.oregon-btn-primary {
+  background: linear-gradient(135deg, #0086ea 0%, #1629b4 100%);
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  padding: 1rem 2rem;
+}
+
+.oregon-btn-primary:hover {
+  background: linear-gradient(135deg, #0077d4 0%, #1420a0 100%);
+}
+
+.oregon-btn-small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9rem;
+  min-width: 2rem;
+}
+
+/* Main Game Screen */
+.oregon-game {
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Progress Bar */
+.oregon-progress {
+  margin-bottom: 2rem;
+}
+
+.oregon-progress-bar {
+  width: 100%;
+  height: 40px;
+  background: var(--bg-tertiary);
+  border-radius: 20px;
+  position: relative;
+  overflow: visible;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.oregon-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #39a283 0%, #0086ea 100%);
+  border-radius: 20px;
+  transition: width 0.5s ease;
+}
+
+.oregon-progress-wagon {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  transition: left 0.5s ease;
+}
+
+.oregon-progress-text {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Status Panel */
+.oregon-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.oregon-status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.oregon-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.oregon-value {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.oregon-health-bar {
+  flex: 1;
+  height: 20px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.oregon-health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e31c79 0%, #39a283 100%);
+  transition: width 0.3s ease;
+}
+
+/* Supplies */
+.oregon-supplies {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.oregon-supplies h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.oregon-supplies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.oregon-supplies-grid > div {
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Controls */
+.oregon-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.oregon-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.oregon-control-group label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.oregon-control-group select {
+  padding: 0.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+/* Actions */
+.oregon-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Event Log */
+.oregon-log {
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.oregon-log h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.oregon-log-entries {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.oregon-log-entry {
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--border-color);
+}
+
+.oregon-log-day {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Message */
+.oregon-message {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1629b4;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Victory/Game Over Screens */
+.oregon-victory,
+.oregon-gameover {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.oregon-victory h1 {
+  color: #39a283;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.oregon-gameover h1 {
+  color: #e31c79;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.oregon-stats {
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  text-align: left;
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.oregon-stats p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.oregon-stats ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.oregon-stats li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.oregon-stats li:last-child {
+  border-bottom: none;
+}
+
+/* Hunting Screen */
+.oregon-hunting {
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.oregon-hunting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.oregon-hunting-header h2 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.oregon-hunting-stats {
+  display: flex;
+  gap: 1.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.oregon-hunting-field {
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(180deg, #87ceeb 0%, #90ee90 100%);
+  border-radius: 12px;
+  position: relative;
+  cursor: crosshair;
+  margin-bottom: 1rem;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.oregon-hunting-target {
+  position: absolute;
+  font-size: 3rem;
+  cursor: pointer;
+  animation: float 2s ease-in-out infinite;
+  transition: transform 0.1s;
+}
+
+.oregon-hunting-target:hover {
+  transform: scale(1.2);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.oregon-hunting-hint {
+  text-align: center;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Shop Screen */
+.oregon-shop {
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.oregon-shop h2 {
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.oregon-money {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.oregon-shop-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.oregon-shop-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.oregon-shop-item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.oregon-shop-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.oregon-shop-qty {
+  min-width: 2rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.oregon-total {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.oregon-shop-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .oregon-intro h1 {
+    font-size: 2rem;
+  }
+
+  .oregon-actions {
+    flex-direction: column;
+  }
+
+  .oregon-btn {
+    width: 100%;
+  }
+
+  .oregon-hunting-field {
+    height: 300px;
+  }
+
+  .oregon-hunting-target {
+    font-size: 2.5rem;
+  }
+}

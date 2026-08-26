@@ -43,6 +43,7 @@ import GreatWallBoard from './components/greatwall/GreatWallBoard'
 import SamIAmBoard from './components/samiam/SamIAmBoard'
 import SpaceInvadersBoard from './components/spaceinvaders/SpaceInvadersBoard'
 import { puzzles } from './data/puzzles'
+import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
 
 const envIndex = parseInt(import.meta.env.VITE_PUZZLE_INDEX, 10)
 const PUZZLE_INDEX =
@@ -161,6 +162,8 @@ function App() {
           <SamIAmBoard key={`samiam-${gameKey}`} />
         ) : activeGame === 'spaceinvaders' ? (
           <SpaceInvadersBoard key={`spaceinvaders-${gameKey}`} />
+        ) : activeGame === 'oregontrail' ? (
+          <OregonTrailBoard key={`oregontrail-${gameKey}`} />
         ) : (
           <SudokuBoard key={`sudoku-${gameKey}`} />
         )}
