@@ -44,6 +44,7 @@ import SamIAmBoard from './components/samiam/SamIAmBoard'
 import SpaceInvadersBoard from './components/spaceinvaders/SpaceInvadersBoard'
 import { puzzles } from './data/puzzles'
 import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
+import PongBoard from './components/pong/PongBoard'
 
 const envIndex = parseInt(import.meta.env.VITE_PUZZLE_INDEX, 10)
 const PUZZLE_INDEX =
@@ -164,6 +165,8 @@ function App() {
           <SpaceInvadersBoard key={`spaceinvaders-${gameKey}`} />
         ) : activeGame === 'oregontrail' ? (
           <OregonTrailBoard key={`oregontrail-${gameKey}`} />
+        ) : activeGame === 'pong' ? (
+          <PongBoard key={`pong-${gameKey}`} />
         ) : (
           <SudokuBoard key={`sudoku-${gameKey}`} />
         )}

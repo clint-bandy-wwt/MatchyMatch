@@ -255,11 +255,19 @@ const GAMES = [
     description: 'Defend Earth from waves of alien invaders!',
     tag: 'Arcade',
   },
+  {
+    id: 'pong',
+    name: 'Pong',
+    description: 'Classic paddle game — first to 10 wins!',
+    tag: 'Arcade',
+    builder: 'Clint',
+    isNew: true,
+  },
 ]
 
 // Two-color gradients cycled across the grid, adapted from the Arcade
 // design spec's tile palette.
-const TILES = [
+// design spec's tile palette.
   'linear-gradient(140deg, #0086ea 0%, #1629b4 100%)',
   'linear-gradient(140deg, #8212c4 0%, #1629b4 100%)',
   'linear-gradient(140deg, #e31c79 0%, #8212c4 100%)',
