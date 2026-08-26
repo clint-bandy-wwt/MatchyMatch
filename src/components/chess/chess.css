@@ -53,7 +53,7 @@
      two ranks were invisible. line-height: 1 plus a lower max keep the
      glyph's box within the square at every width this clamp can reach. */
   line-height: 1;
-  font-size: clamp(1.5rem, 6vw, 2.25rem);
+  font-size: clamp(1.65rem, 6.5vw, 2.5rem);
   position: relative;
   transition: all 0.2s ease;
   padding: 0;
@@ -105,15 +105,20 @@
    CapturedPieces.jsx) and are told apart by fill + stroke here, not by
    font glyph support — top-level (not nested under .piece) so this also
    covers the .captured-piece spans in the captured-pieces panel. */
+/* A 1.5px stroke on a small, thin glyph like the pawn eats most of its
+   fill, so both colors read as near-black blobs. A thinner stroke plus a
+   brighter fill keeps white's fill area dominant at small sizes; black
+   gets a faint light stroke so it doesn't flatten into dark squares. */
 .piece-white {
-  color: #f7f3ea;
-  -webkit-text-stroke: 1.5px #3a3a3a;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  color: #ffffff;
+  -webkit-text-stroke: 1px #2b2b2b;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
 }
 
 .piece-black {
-  color: #1a1a1a;
+  color: #0d0d0d;
+  -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.25);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
