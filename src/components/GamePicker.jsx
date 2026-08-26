@@ -249,6 +249,12 @@ const GAMES = [
     tag: 'Word',
     isNew: true,
   },
+  {
+    id: 'spaceinvaders',
+    name: 'Space Invaders',
+    description: 'Defend Earth from waves of alien invaders!',
+    tag: 'Arcade',
+  },
 ]
 
 // Two-color gradients cycled across the grid, adapted from the Arcade

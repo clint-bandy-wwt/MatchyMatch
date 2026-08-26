@@ -41,6 +41,7 @@ import LatchamBoard from './components/latcham/LatchamBoard'
 import GeoffsGeometryBoard from './components/geoffsgeometry/GeoffsGeometryBoard'
 import GreatWallBoard from './components/greatwall/GreatWallBoard'
 import SamIAmBoard from './components/samiam/SamIAmBoard'
+import SpaceInvadersBoard from './components/spaceinvaders/SpaceInvadersBoard'
 import { puzzles } from './data/puzzles'
 import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
 
@@ -159,6 +160,8 @@ function App() {
           <GreatWallBoard key={`greatwall-${gameKey}`} />
         ) : activeGame === 'samiam' ? (
           <SamIAmBoard key={`samiam-${gameKey}`} />
+        ) : activeGame === 'spaceinvaders' ? (
+          <SpaceInvadersBoard key={`spaceinvaders-${gameKey}`} />
         ) : activeGame === 'oregontrail' ? (
           <OregonTrailBoard key={`oregontrail-${gameKey}`} />
         ) : (
