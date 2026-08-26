@@ -41,6 +41,7 @@ import LatchamBoard from './components/latcham/LatchamBoard'
 import GeoffsGeometryBoard from './components/geoffsgeometry/GeoffsGeometryBoard'
 import GreatWallBoard from './components/greatwall/GreatWallBoard'
 import SamIAmBoard from './components/samiam/SamIAmBoard'
+import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
 import { puzzles } from './data/puzzles'
 
 const envIndex = parseInt(import.meta.env.VITE_PUZZLE_INDEX, 10)
@@ -158,6 +159,8 @@ function App() {
           <GreatWallBoard key={`greatwall-${gameKey}`} />
         ) : activeGame === 'samiam' ? (
           <SamIAmBoard key={`samiam-${gameKey}`} />
+        ) : activeGame === 'oregontrail' ? (
+          <OregonTrailBoard key={`oregontrail-${gameKey}`} />
         ) : (
           <SudokuBoard key={`sudoku-${gameKey}`} />
         )}

@@ -243,6 +243,13 @@ const GAMES = [
     tag: 'Word',
     isNew: true,
   },
+  {
+    id: 'oregontrail',
+    name: 'The Oregon Trail',
+    description: 'Journey west in this classic survival adventure game!',
+    tag: 'Adventure',
+    isNew: true,
+  },
 ]
 
 // Two-color gradients cycled across the grid, adapted from the Arcade
