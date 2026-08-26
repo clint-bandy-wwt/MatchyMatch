@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import './oregontrail.css'
 
 const TOTAL_DISTANCE = 2000 // miles to Oregon
@@ -54,6 +54,9 @@ export default function OregonTrailBoard() {
 
   // Shop state
   const [shopSelection, setShopSelection] = useState({})
+  
+  // Ref to track if we've already logged game over
+  const gameOverLoggedRef = useRef(false)
 
   const addLog = useCallback((msg) => {
     setEventLog(prev => [{ day, msg, id: Date.now() }, ...prev.slice(0, 9)])
@@ -61,6 +64,7 @@ export default function OregonTrailBoard() {
 
   const startGame = () => {
     setGameState('playing')
+    gameOverLoggedRef.current = false
     addLog('Your journey on the Oregon Trail begins!')
   }
 
@@ -96,7 +100,7 @@ export default function OregonTrailBoard() {
         break
       }
     }
-  }, [day, addLog])
+  }, [addLog])
 
   const advanceDay = useCallback(() => {
     const currentPace = PACE_SETTINGS[pace]
@@ -158,17 +162,27 @@ export default function OregonTrailBoard() {
 
   // Check win/lose conditions
   useEffect(() => {
-    if (gameState !== 'playing') return
+    if (gameState !== 'playing' || gameOverLoggedRef.current) return
     
     if (distance >= TOTAL_DISTANCE) {
-      addLog('You made it to Oregon!')
-      setTimeout(() => setGameState('victory'), 0)
+      gameOverLoggedRef.current = true
+      // Queue state updates
+      setTimeout(() => {
+        addLog('You made it to Oregon!')
+        setGameState('victory')
+      }, 0)
     } else if (health <= 0) {
-      addLog('Your party has perished on the trail.')
-      setTimeout(() => setGameState('gameover'), 0)
+      gameOverLoggedRef.current = true
+      setTimeout(() => {
+        addLog('Your party has perished on the trail.')
+        setGameState('gameover')
+      }, 0)
     } else if (supplies.oxen <= 0 && Math.random() < 0.3) {
-      addLog('Without oxen, you cannot continue.')
-      setTimeout(() => setGameState('gameover'), 0)
+      gameOverLoggedRef.current = true
+      setTimeout(() => {
+        addLog('Without oxen, you cannot continue.')
+        setGameState('gameover')
+      }, 0)
     }
   }, [distance, health, supplies.oxen, gameState, addLog])
 
@@ -268,6 +282,7 @@ export default function OregonTrailBoard() {
     setDay(1)
     setMessage('')
     setEventLog([])
+    gameOverLoggedRef.current = false
   }
 
   // Intro screen
