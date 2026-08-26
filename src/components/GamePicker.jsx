@@ -230,6 +230,13 @@ const GAMES = [
     isNew: true,
   },
   {
+    id: 'spaceinvaders',
+    name: 'Space Invaders',
+    description: 'Defend Earth from alien invaders in this classic arcade game!',
+    tag: 'Arcade',
+    isNew: true,
+  },
+  {
     id: 'greatwall',
     name: 'The Great Wall',
     description: 'Break down the wall, one brick at a time!',
