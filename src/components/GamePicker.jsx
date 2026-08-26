@@ -243,8 +243,15 @@ const GAMES = [
     tag: 'Word',
     isNew: true,
   },
-]
+  {
+    id: 'frogger',
+    name: 'Frogger',
+    description: 'Hop across the road and river without getting squashed or wet!',
+    tag: 'Arcade',
+    isNew: true,
+  },
 
+]
 // Two-color gradients cycled across the grid, adapted from the Arcade
 // design spec's tile palette.
 const TILES = [
