@@ -109,6 +109,19 @@
    fill, so both colors read as near-black blobs. A thinner stroke plus a
    brighter fill keeps white's fill area dominant at small sizes; black
    gets a faint light stroke so it doesn't flatten into dark squares. */
+.piece-white,
+.piece-black {
+  /* Without an explicit font, some platforms substitute a color-emoji
+     font for the pawn glyph specifically (the other five chess symbols
+     stay covered by a plain text font), which paints its own fixed
+     colors and ignores everything below — white's pawns rendered solid
+     black regardless of the color set here. Naming the plain-text
+     symbol fonts that actually cover this Unicode block keeps every
+     piece on the same monochrome rendering path. */
+  font-family: 'Apple Symbols', 'Segoe UI Symbol', 'Noto Sans Symbols2', 'DejaVu Sans', sans-serif;
+  font-variant-emoji: text;
+}
+
 .piece-white {
   color: #ffffff;
   -webkit-text-stroke: 1px #2b2b2b;
