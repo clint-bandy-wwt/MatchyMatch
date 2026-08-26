@@ -262,13 +262,7 @@ const TILES = [
   'linear-gradient(140deg, #c33d04 0%, #e31c79 100%)',
   'linear-gradient(140deg, #0086ea 0%, #39a283 100%)',
   'linear-gradient(140deg, #4e4f5f 0%, #1c0087 100%)',
-  {
-    id: 'frogger',
-    name: 'Frogger',
-    description: 'Hop across the road and river without getting squashed or wet!',
-    tag: 'Arcade',
-    isNew: true,
-  },
+]
 
 // Slight per-card resting tilt, cycled across the grid — straightens on
 // hover. Adapted from the Arcade design spec's ROTS values.
