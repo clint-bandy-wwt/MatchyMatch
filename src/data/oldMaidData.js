@@ -92,7 +92,7 @@ export function removePairs(hand) {
   
   // Find pairs and mark for removal
   const indicesToRemove = new Set();
-  Object.entries(rankGroups).forEach(([rank, cards]) => {
+  Object.entries(rankGroups).forEach(([, cards]) => {
     // Remove pairs (2 at a time)
     for (let i = 0; i + 1 < cards.length; i += 2) {
       pairs.push([cards[i].card, cards[i + 1].card]);
