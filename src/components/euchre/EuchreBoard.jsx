@@ -257,7 +257,7 @@ const POSITIONS = ['South', 'West', 'North', 'East']
 const POSITION_LABELS = { South: '👤 You', West: '🤖 West', North: '🤖 North', East: '🤖 East' }
 
 export default function EuchreBoard() {
-  const [gamePhase, setGamePhase] = useState('deal') // 'deal' | 'bid1' | 'bid2' | 'play' | 'handOver'
+  const [gamePhase, setGamePhase] = useState('deal') // 'deal' | 'bid1' | 'bid2' | 'dealerDiscard' | 'play' | 'handOver'
   const [hands, setHands] = useState({ South: [], West: [], North: [], East: [] })
   const [turnedCard, setTurnedCard] = useState(null)
   const [dealer, setDealer] = useState('South')
@@ -350,6 +350,26 @@ export default function EuchreBoard() {
     return pos === 'North' || pos === 'South' ? 'N-S' : 'E-W'
   }
 
+  // BUG FIX 4: Add dealer discard handler
+  const handleDealerDiscard = (card) => {
+    if (dealer !== 'South') return
+    
+    const hand = hands.South
+    const newHand = hand.filter(c => cardKey(c) !== cardKey(card))
+    setHands({ ...hands, South: newHand })
+    
+    // Start play
+    const dealerIdx = POSITIONS.indexOf(dealer)
+    const leadIdx = (dealerIdx + 1) % 4
+    setCurrentPlayer(POSITIONS[leadIdx])
+    setGamePhase('play')
+    setMessage(`${SUIT_NAMES[trump]} is trump. ${POSITION_LABELS[POSITIONS[leadIdx]]} leads.`)
+    
+    if (POSITIONS[leadIdx] !== 'South') {
+      setTimeout(() => aiPlay(POSITIONS[leadIdx]), 1000)
+    }
+  }
+
   const handleBid = (orderUp) => {
     if (currentPlayer !== 'South') return
     
@@ -357,22 +377,32 @@ export default function EuchreBoard() {
       setTrump(turnedCard.suit)
       setMaker(currentPlayer)
       
-      // Dealer picks up the turned card
+      // BUG FIX 4: Dealer picks up - if South is dealer, go to discard phase
       const dealerHand = [...hands[dealer]]
       dealerHand.push(turnedCard)
       setHands({ ...hands, [dealer]: dealerHand })
       setTurnedCard(null)
       
-      // Start play
-      const dealerIdx = POSITIONS.indexOf(dealer)
-      const leadIdx = (dealerIdx + 1) % 4
-      setCurrentPlayer(POSITIONS[leadIdx])
-      setGamePhase('play')
-      setMessage(`${SUIT_NAMES[turnedCard.suit]} is trump. ${POSITION_LABELS[POSITIONS[leadIdx]]} leads.`)
-      
-      // If AI leads, play their card
-      if (POSITIONS[leadIdx] !== 'South') {
-        setTimeout(() => aiPlay(POSITIONS[leadIdx]), 1000)
+      if (dealer === 'South') {
+        setGamePhase('dealerDiscard')
+        setMessage('You picked up the card. Discard one card.')
+      } else {
+        // AI dealer discards lowest card automatically
+        const sorted = [...dealerHand].sort((a, b) => cardValue(a, turnedCard.suit) - cardValue(b, turnedCard.suit))
+        const newDealerHand = sorted.slice(1)
+        setHands(prev => ({ ...prev, [dealer]: newDealerHand }))
+        
+        // Start play
+        const dealerIdx = POSITIONS.indexOf(dealer)
+        const leadIdx = (dealerIdx + 1) % 4
+        setCurrentPlayer(POSITIONS[leadIdx])
+        setGamePhase('play')
+        setMessage(`${SUIT_NAMES[turnedCard.suit]} is trump. ${POSITION_LABELS[POSITIONS[leadIdx]]} leads.`)
+        
+        // If AI leads, play their card
+        if (POSITIONS[leadIdx] !== 'South') {
+          setTimeout(() => aiPlay(POSITIONS[leadIdx]), 1000)
+        }
       }
     } else {
       setBidPasses([...bidPasses, currentPlayer])
@@ -420,25 +450,28 @@ export default function EuchreBoard() {
       // Dealer picks up
       const dealerHand = [...hands[dealer]]
       dealerHand.push(turnedCard)
-      
-      // Dealer discards lowest card
-      let newDealerHand = dealerHand
-      if (dealer !== 'South') {
-        dealerHand.sort((a, b) => cardValue(a, turnedCard.suit) - cardValue(b, turnedCard.suit))
-        newDealerHand = dealerHand.slice(1)
-      }
-      
-      setHands({ ...hands, [dealer]: newDealerHand })
+      setHands({ ...hands, [dealer]: dealerHand })
       setTurnedCard(null)
       
-      const dealerIdx = POSITIONS.indexOf(dealer)
-      const leadIdx = (dealerIdx + 1) % 4
-      setCurrentPlayer(POSITIONS[leadIdx])
-      setGamePhase('play')
-      setMessage(`${POSITION_LABELS[position]} orders up. ${SUIT_NAMES[turnedCard.suit]} is trump.`)
-      
-      if (POSITIONS[leadIdx] !== 'South') {
-        setTimeout(() => aiPlay(POSITIONS[leadIdx]), 1500)
+      // BUG FIX 4: If South is dealer, go to discard phase
+      if (dealer === 'South') {
+        setGamePhase('dealerDiscard')
+        setMessage(`${POSITION_LABELS[position]} orders up. You must discard one card.`)
+      } else {
+        // AI dealer discards lowest card
+        const sorted = [...dealerHand].sort((a, b) => cardValue(a, turnedCard.suit) - cardValue(b, turnedCard.suit))
+        const newDealerHand = sorted.slice(1)
+        setHands(prev => ({ ...prev, [dealer]: newDealerHand }))
+        
+        const dealerIdx = POSITIONS.indexOf(dealer)
+        const leadIdx = (dealerIdx + 1) % 4
+        setCurrentPlayer(POSITIONS[leadIdx])
+        setGamePhase('play')
+        setMessage(`${POSITION_LABELS[position]} orders up. ${SUIT_NAMES[turnedCard.suit]} is trump.`)
+        
+        if (POSITIONS[leadIdx] !== 'South') {
+          setTimeout(() => aiPlay(POSITIONS[leadIdx]), 1500)
+        }
       }
     } else {
       setBidPasses([...bidPasses, position])
@@ -649,6 +682,41 @@ export default function EuchreBoard() {
     // BUG FIX 6: Increment to force redeal
     dealCountRef.current++
     setGamePhase('deal')
+  }
+
+  // BUG FIX 4: Render dealer discard screen
+  if (gamePhase === 'dealerDiscard') {
+    return (
+      <div className="flex flex-col items-center gap-6 w-full max-w-2xl mx-auto">
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--label-primary)', textAlign: 'center' }}>
+          🃏 Euchre
+        </h2>
+
+        <div
+          className="flex flex-col items-center gap-4 p-6 rounded-3xl w-full"
+          style={{ background: 'var(--bg-surface)', boxShadow: 'var(--shadow-lg)' }}
+        >
+          <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--label-secondary)', textAlign: 'center' }}>
+            {message}
+          </p>
+
+          <div style={{ fontSize: '0.85rem', color: 'var(--label-secondary)', textAlign: 'center' }}>
+            Trump: {trump} {SUIT_NAMES[trump]}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <span style={{ fontSize: '0.75rem', color: 'var(--label-tertiary)', textTransform: 'uppercase' }}>
+            Your Hand (click a card to discard)
+          </span>
+          <div className="flex gap-2">
+            {hands.South.map((card, i) => (
+              <Card key={i} card={card} onClick={() => handleDealerDiscard(card)} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // ── Render hand over screen ───────────────────────────────────────

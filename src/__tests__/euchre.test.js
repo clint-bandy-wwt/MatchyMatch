@@ -162,8 +162,8 @@ describe('Euchre Game Integration Tests', () => {
     })
     
     // Capture initial score
-    const scoreElements = container.querySelectorAll('[style*="fontSize: \\'2rem\\'"]') ||
-                         container.querySelectorAll('[style*="fontSize: \\'1.5rem\\'"]')
+    const scoreElements = container.querySelectorAll('[style*="fontSize: "]') ||
+                         container.querySelectorAll('span')
     if (scoreElements.length >= 2) {
       initialScore = {
         ns: parseInt(scoreElements[0].textContent) || 0,
@@ -183,7 +183,7 @@ describe('Euchre Game Integration Tests', () => {
       if (bodyText.match(/hand over|next hand|euchred|march|\+\d+ point/i)) {
         // Verify score changed
         if (initialScore) {
-          const newScoreElements = container.querySelectorAll('[style*="fontSize: \\'2rem\\'"]')
+          const newScoreElements = container.querySelectorAll('[style*="fontSize: "]')
           if (newScoreElements.length >= 2) {
             const newNS = parseInt(newScoreElements[0].textContent) || 0
             const newEW = parseInt(newScoreElements[1].textContent) || 0
