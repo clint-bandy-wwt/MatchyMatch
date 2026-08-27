@@ -42,6 +42,7 @@ import GeoffsGeometryBoard from './components/geoffsgeometry/GeoffsGeometryBoard
 import GreatWallBoard from './components/greatwall/GreatWallBoard'
 import SamIAmBoard from './components/samiam/SamIAmBoard'
 import SpaceInvadersBoard from './components/spaceinvaders/SpaceInvadersBoard'
+import CanastaBoard from './components/canasta/CanastaBoard'
 import { puzzles } from './data/puzzles'
 import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
 import PongBoard from './components/pong/PongBoard'
@@ -167,6 +168,8 @@ function App() {
           <OregonTrailBoard key={`oregontrail-${gameKey}`} />
         ) : activeGame === 'pong' ? (
           <PongBoard key={`pong-${gameKey}`} />
+        ) : activeGame === 'canasta' ? (
+          <CanastaBoard key={`canasta-${gameKey}`} />
         ) : (
           <SudokuBoard key={`sudoku-${gameKey}`} />
         )}

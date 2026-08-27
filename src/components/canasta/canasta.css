@@ -1,0 +1,310 @@
+/* src/components/canasta/canasta.css */
+
+.canasta-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.canasta-board {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 600px;
+}
+
+/* Card sizing */
+.card-normal {
+  width: 70px;
+  height: 100px;
+}
+
+.card-small {
+  width: 50px;
+  height: 70px;
+}
+
+.card-back {
+  width: 70px;
+  height: 100px;
+}
+
+.card-back.card-small {
+  width: 50px;
+  height: 70px;
+}
+
+/* Hand display */
+.canasta-hand {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background-color: var(--fill-tertiary);
+  border-radius: 12px;
+  min-height: 120px;
+}
+
+.canasta-hand-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label-secondary);
+  margin-bottom: 8px;
+}
+
+/* Meld display */
+.canasta-melds {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background-color: var(--fill-secondary);
+  border-radius: 12px;
+  min-height: 120px;
+}
+
+.canasta-meld {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: var(--fill-tertiary);
+  border-radius: 8px;
+  position: relative;
+}
+
+.canasta-meld-cards {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.canasta-meld-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #0a84ff;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.canasta-meld-badge.natural {
+  background-color: #34c759;
+}
+
+.canasta-meld-badge.mixed {
+  background-color: #ff9500;
+}
+
+/* Center area */
+.canasta-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  padding: 20px;
+  background-color: var(--fill-secondary);
+  border-radius: 12px;
+}
+
+.canasta-pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.canasta-pile-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label-secondary);
+}
+
+.canasta-pile-cards {
+  position: relative;
+  width: 80px;
+  height: 110px;
+}
+
+.canasta-pile-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.canasta-pile-count {
+  font-size: 12px;
+  color: var(--label-tertiary);
+}
+
+.canasta-discard-frozen {
+  border: 3px solid #ff3b30 !important;
+  box-shadow: 0 0 12px rgba(255, 59, 48, 0.5);
+}
+
+/* Controls */
+.canasta-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 16px;
+  background-color: var(--fill-tertiary);
+  border-radius: 12px;
+}
+
+.canasta-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--fill-secondary);
+  color: var(--label-primary);
+}
+
+.canasta-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.canasta-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.canasta-btn-primary {
+  background-color: #0a84ff;
+  color: white;
+}
+
+.canasta-btn-success {
+  background-color: #34c759;
+  color: white;
+}
+
+.canasta-btn-danger {
+  background-color: #ff3b30;
+  color: white;
+}
+
+.canasta-btn-warning {
+  background-color: #ff9500;
+  color: white;
+}
+
+/* Score display */
+.canasta-score {
+  display: flex;
+  justify-content: space-around;
+  padding: 16px;
+  background-color: var(--fill-tertiary);
+  border-radius: 12px;
+  gap: 20px;
+}
+
+.canasta-score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.canasta-score-label {
+  font-size: 12px;
+  color: var(--label-secondary);
+  font-weight: 600;
+}
+
+.canasta-score-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--label-primary);
+}
+
+/* Turn indicator */
+.canasta-turn-indicator {
+  text-align: center;
+  padding: 12px;
+  background-color: var(--fill-secondary);
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.canasta-turn-indicator.active {
+  background-color: #0a84ff;
+  color: white;
+}
+
+/* Game over modal */
+.canasta-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.canasta-modal-content {
+  background-color: var(--fill-primary);
+  padding: 32px;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+.canasta-modal-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--label-primary);
+  margin-bottom: 16px;
+}
+
+.canasta-modal-message {
+  font-size: 18px;
+  color: var(--label-secondary);
+  margin-bottom: 24px;
+}
+
+.canasta-modal-score {
+  font-size: 48px;
+  font-weight: bold;
+  color: #0a84ff;
+  margin-bottom: 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .canasta-center {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .canasta-hand {
+    gap: 4px;
+  }
+
+  .card-normal {
+    width: 60px;
+    height: 85px;
+  }
+
+  .card-small {
+    width: 45px;
+    height: 63px;
+  }
+}

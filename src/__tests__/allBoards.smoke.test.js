@@ -1,3 +1,4 @@
+// src/__tests__/allBoards.smoke.test.js
 // Smoke test: every game board should mount, render, and unmount without
 // throwing. This is deliberately shallow — it exists to catch "the game is a
 // blank screen / white screen of death" bugs (bad imports, undefined data
@@ -42,6 +43,7 @@ import LatchamBoard from '../components/latcham/LatchamBoard';
 import GeoffsGeometryBoard from '../components/geoffsgeometry/GeoffsGeometryBoard';
 import GreatWallBoard from '../components/greatwall/GreatWallBoard';
 import SamIAmBoard from '../components/samiam/SamIAmBoard';
+import CanastaBoard from '../components/canasta/CanastaBoard';
 import { puzzles } from '../data/puzzles';
 
 // Boards reachable from App.jsx's game switch, keyed by the same id used in
@@ -85,6 +87,7 @@ const BOARDS = [
   ['geoffsgeometry', () => <GeoffsGeometryBoard />],
   ['greatwall', () => <GreatWallBoard />],
   ['samiam', () => <SamIAmBoard />],
+  ['canasta', () => <CanastaBoard />],
 ];
 
 describe('game board smoke tests', () => {
