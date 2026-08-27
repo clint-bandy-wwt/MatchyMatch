@@ -1,5 +1,4 @@
 // src/components/oldmaid/OldMaidBoard.jsx
-// src/components/oldmaid/OldMaidBoard.jsx
 import { useOldMaid } from '../../hooks/useOldMaid';
 import { getCardDisplay, getSuitColor } from '../../data/oldMaidData';
 
