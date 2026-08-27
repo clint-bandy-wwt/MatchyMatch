@@ -28,3 +28,4 @@ To get started with development, here's how to run the tests:
 - Run `npm test` to execute all tests once
 - Use `npm run test:watch` to run tests in watch mode for continuous feedback during development
 - Execute `npm run test:coverage` to generate a coverage report showing which parts of the code are tested
+Squash strategy test.
