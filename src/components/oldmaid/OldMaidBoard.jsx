@@ -104,7 +104,7 @@ function PairDisplay({ pairs, label }) {
 
 // ── Game Over Screen ──────────────────────────────────────────────
 
-function GameOverScreen({ gameState, onPlayAgain }) {
+function GameOverScreen({ gameState, unmatchedQueen, onPlayAgain }) {
   const isWin = gameState === 'won';
   
   return (
@@ -150,6 +150,24 @@ function GameOverScreen({ gameState, onPlayAgain }) {
         </p>
       </div>
       
+      {/* UX improvement: Show the unmatched queen */}
+      {unmatchedQueen && (
+        <div className="flex flex-col items-center gap-2">
+          <div
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: 'var(--label-tertiary)',
+            }}
+          >
+            The Old Maid
+          </div>
+          <Card card={unmatchedQueen} />
+        </div>
+      )}
+      
       <button onClick={onPlayAgain} className="btn-primary w-full">
         Play Again
       </button>
@@ -169,6 +187,7 @@ export default function OldMaidBoard() {
     gameState,
     message,
     isAIThinking,
+    unmatchedQueen,
     handlePlayerDraw,
     resetGame,
   } = useOldMaid();
@@ -176,7 +195,7 @@ export default function OldMaidBoard() {
   if (gameState !== 'playing') {
     return (
       <div className="flex flex-col items-center gap-6 w-full max-w-5xl mx-auto">
-        <GameOverScreen gameState={gameState} onPlayAgain={resetGame} />
+        <GameOverScreen gameState={gameState} unmatchedQueen={unmatchedQueen} onPlayAgain={resetGame} />
         
         {/* Show final pairs */}
         <div className="w-full flex flex-col gap-6">
