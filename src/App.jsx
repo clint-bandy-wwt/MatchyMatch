@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useState } from 'react'
 import Header from './components/Header'
 import { useDarkMode } from './hooks/useDarkMode'
