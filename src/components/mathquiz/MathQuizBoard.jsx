@@ -233,7 +233,6 @@ function Game({ problems, onNewGame }) {
 
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, answered, gameState]);
 
   const handleSubmit = () => {

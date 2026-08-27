@@ -158,7 +158,6 @@ function Game({ entry, onNewGame }) {
     showToast(remaining === 1 ? "Last chance!" : `Not quite — ${remaining} tries left`);
     // Clear answer for next attempt
     setTimeout(() => setAnswer(Array(word.length).fill(null)), 400);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState, answer, word, scrambled, wrongGuesses]);
 
   // Keyboard support
@@ -202,7 +201,6 @@ function Game({ entry, onNewGame }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState, scrambled]);
 
   const usedPoolIndices = new Set(answer.filter((v) => v !== null));

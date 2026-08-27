@@ -244,7 +244,6 @@ export default function GreatWallBoard() {
         cancelAnimationFrame(gameLoopRef.current)
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Input listeners are re-bound whenever gameState changes, so handleClick

@@ -366,7 +366,6 @@ function Game({ puzzle, onNewGame }) {
     } else {
       showToast(`+${pts} pts 🎉`);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, found, puzzle, center]);
 
   // ── Keyboard support ──────────────────────────────────────────────
@@ -389,7 +388,6 @@ function Game({ puzzle, onNewGame }) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, found]);
 
   const handleLetter = useCallback((letter) => {
