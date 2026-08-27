@@ -1,3 +1,4 @@
+// src/components/GamePicker.jsx
 import { useEffect, useMemo, useState } from 'react'
 
 const GAMES = [
@@ -261,6 +262,13 @@ const GAMES = [
     description: 'Classic paddle game — first to 10 wins!',
     tag: 'Arcade',
     builder: 'Clint',
+    isNew: true,
+  },
+  {
+    id: 'oldmaid',
+    name: 'Old Maid',
+    description: 'Draw cards and avoid being left with the unmatched Queen!',
+    tag: 'Strategy',
     isNew: true,
   },
 ]
