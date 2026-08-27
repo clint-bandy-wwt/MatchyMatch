@@ -20,3 +20,11 @@ If you are developing a production application, we recommend using TypeScript wi
 Why did the matching game break up with the memory game?
 
 Because it kept finding someone **else** a perfect match! 🃏
+
+## Contributing
+
+To get started with development, here's how to run the tests:
+
+- Run `npm test` to execute all tests once
+- Use `npm run test:watch` to run tests in watch mode for continuous feedback during development
+- Execute `npm run test:coverage` to generate a coverage report showing which parts of the code are tested
