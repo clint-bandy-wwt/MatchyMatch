@@ -318,6 +318,23 @@ export default function EuchreBoard() {
     dealCards()
   }, [dealCards])
 
+  // Trigger AI bidding when needed
+  useEffect(() => {
+    if (gamePhase !== 'bid1' && gamePhase !== 'bid2') return
+    if (currentPlayer === 'South') return
+    if (!turnedCard) return
+    
+    const timer = setTimeout(() => {
+      if (gamePhase === 'bid1') {
+        aiBid1(currentPlayer)
+      } else if (gamePhase === 'bid2') {
+        aiBid2(currentPlayer)
+      }
+    }, 1000)
+    
+    return () => clearTimeout(timer)
+  }, [gamePhase, currentPlayer, turnedCard, hands, dealer, bidPasses, trump, maker, trick])
+
   const nextPosition = (pos) => {
     const idx = POSITIONS.indexOf(pos)
     return POSITIONS[(idx + 1) % 4]
@@ -363,15 +380,8 @@ export default function EuchreBoard() {
         setCurrentPlayer(POSITIONS[nextIdx])
         setBidPasses([])
         setMessage('Bidding round 2: Name trump or pass')
-        
-        if (POSITIONS[nextIdx] !== 'South') {
-          setTimeout(() => aiBid2(POSITIONS[nextIdx]), 1000)
-        }
       } else {
         setCurrentPlayer(next)
-        if (next !== 'South') {
-          setTimeout(() => aiBid1(next), 1000)
-        }
       }
     }
   }
@@ -435,15 +445,8 @@ export default function EuchreBoard() {
         setCurrentPlayer(POSITIONS[nextIdx])
         setBidPasses([])
         setMessage('All passed. Bidding round 2: Name trump or pass')
-        
-        if (POSITIONS[nextIdx] !== 'South') {
-          setTimeout(() => aiBid2(POSITIONS[nextIdx]), 1000)
-        }
       } else {
         setCurrentPlayer(next)
-        if (next !== 'South') {
-          setTimeout(() => aiBid1(next), 1000)
-        }
       }
     }
   }
@@ -478,9 +481,6 @@ export default function EuchreBoard() {
         }, 2000)
       } else {
         setCurrentPlayer(next)
-        if (next !== 'South') {
-          setTimeout(() => aiBid2(next), 1000)
-        }
       }
     }
   }

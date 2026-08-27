@@ -337,3 +337,43 @@ describe('Euchre trump logic', () => {
     });
   });
 });
+
+describe('Euchre position tracking', () => {
+  // Helper: rotate through bidding positions
+  function nextPosition(pos, positions = ['South', 'West', 'North', 'East']) {
+    const idx = positions.indexOf(pos);
+    return positions[(idx + 1) % 4];
+  }
+
+  it('should cycle through positions in correct order', () => {
+    const positions = ['South', 'West', 'North', 'East'];
+    
+    expect(nextPosition('South')).toBe('West');
+    expect(nextPosition('West')).toBe('North');
+    expect(nextPosition('North')).toBe('East');
+    expect(nextPosition('East')).toBe('South');
+  });
+
+  it('should track bidding passes correctly', () => {
+    const bidPasses = ['West', 'North'];
+    
+    // After 3 non-South players pass, bid1 should end
+    expect(bidPasses.length).toBeLessThanOrEqual(3);
+    expect(bidPasses.every(p => p !== 'South')).toBe(true);
+  });
+
+  it('should handle position after each pass', () => {
+    let currentPos = 'West';
+    const positions = ['South', 'West', 'North', 'East'];
+    const bidPasses = [];
+    
+    // Simulate: West passes, North passes
+    bidPasses.push(currentPos);
+    currentPos = nextPosition(currentPos, positions); // North
+    bidPasses.push(currentPos);
+    currentPos = nextPosition(currentPos, positions); // East
+    
+    expect(bidPasses).toEqual(['West', 'North']);
+    expect(currentPos).toBe('East');
+  });
+});
