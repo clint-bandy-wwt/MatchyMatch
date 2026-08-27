@@ -476,6 +476,7 @@ export default function EuchreBoard() {
         // All passed, redeal
         setMessage('All passed. Redealing...')
         setTimeout(() => {
+          setGamePhase('deal')
           const nextDealer = nextPosition(dealer)
           setDealer(nextDealer)
         }, 2000)
