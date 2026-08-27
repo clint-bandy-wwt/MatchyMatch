@@ -818,24 +818,52 @@ export default function EuchreBoard() {
       </h2>
 
       <div className="flex gap-4 items-center">
-        <div className="flex flex-col items-center gap-2 p-3 rounded-2xl" style={{ background: 'var(--fill-tertiary)' }}>
-          <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0a84ff' }}>{score['N-S']}</span>
-          <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--label-tertiary)' }}>N-S</span>
+        <div className="flex flex-col items-center gap-1 p-4 rounded-2xl" style={{ background: 'var(--bg-surface)', border: '2px solid var(--fill-tertiary)', minWidth: 140 }}>
+          <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--label-tertiary)', letterSpacing: '0.05em' }}>
+            North-South
+          </span>
+          <span style={{ fontSize: '2rem', fontWeight: 700, color: '#0a84ff', lineHeight: 1 }}>
+            {score['N-S']}
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--label-secondary)' }}>
+            {tricksWon['N-S']} tricks
+          </span>
         </div>
-        <div className="flex flex-col items-center gap-1 text-center">
-          <span style={{ fontSize: '0.75rem', color: 'var(--label-tertiary)' }}>Trump</span>
-          <span style={{ fontSize: '1.5rem' }}>{trump}</span>
+        
+        <div className="flex flex-col items-center gap-1 p-3 rounded-2xl" style={{ background: 'var(--fill-secondary)', minWidth: 80 }}>
+          <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--label-tertiary)', letterSpacing: '0.05em' }}>
+            Trump
+          </span>
+          <span style={{ fontSize: '2rem', lineHeight: 1 }}>
+            {trump}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--label-secondary)' }}>
+            {SUIT_NAMES[trump]}
+          </span>
         </div>
-        <div className="flex flex-col items-center gap-2 p-3 rounded-2xl" style={{ background: 'var(--fill-tertiary)' }}>
-          <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ff6b6b' }}>{score['E-W']}</span>
-          <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--label-tertiary)' }}>E-W</span>
+        
+        <div className="flex flex-col items-center gap-1 p-4 rounded-2xl" style={{ background: 'var(--bg-surface)', border: '2px solid var(--fill-tertiary)', minWidth: 140 }}>
+          <span style={{ fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--label-tertiary)', letterSpacing: '0.05em' }}>
+            East-West
+          </span>
+          <span style={{ fontSize: '2rem', fontWeight: 700, color: '#ff6b6b', lineHeight: 1 }}>
+            {score['E-W']}
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--label-secondary)' }}>
+            {tricksWon['E-W']} tricks
+          </span>
         </div>
       </div>
 
       {message && (
-        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--label-secondary)', textAlign: 'center' }}>
+        <div 
+          className="px-4 py-2 rounded-2xl"
+          style={{ background: 'var(--fill-tertiary)' }}
+        >
+          <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--label-primary)', textAlign: 'center', margin: 0 }}>
           {message}
         </p>
+        </div>
       )}
 
       <div className="flex flex-col items-center gap-4 w-full">
@@ -912,10 +940,6 @@ export default function EuchreBoard() {
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="flex gap-2 text-xs" style={{ color: 'var(--label-tertiary)' }}>
-        <span>Tricks: N-S {tricksWon['N-S']} | E-W {tricksWon['E-W']}</span>
       </div>
     </div>
   )
