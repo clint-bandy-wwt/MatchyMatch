@@ -263,6 +263,13 @@ const GAMES = [
     builder: 'Clint',
     isNew: true,
   },
+  {
+    id: 'crazyeights',
+    name: 'Crazy Eights',
+    description: 'Match rank or suit - eights are wild!',
+    tag: 'Cards',
+    isNew: true,
+  },
 ]
 
 

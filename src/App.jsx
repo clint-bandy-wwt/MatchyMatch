@@ -45,6 +45,7 @@ import SpaceInvadersBoard from './components/spaceinvaders/SpaceInvadersBoard'
 import { puzzles } from './data/puzzles'
 import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
 import PongBoard from './components/pong/PongBoard'
+import CrazyEightsBoard from './components/crazyeights/CrazyEightsBoard'
 
 const envIndex = parseInt(import.meta.env.VITE_PUZZLE_INDEX, 10)
 const PUZZLE_INDEX =
@@ -167,6 +168,8 @@ function App() {
           <OregonTrailBoard key={`oregontrail-${gameKey}`} />
         ) : activeGame === 'pong' ? (
           <PongBoard key={`pong-${gameKey}`} />
+        ) : activeGame === 'crazyeights' ? (
+          <CrazyEightsBoard key={`crazyeights-${gameKey}`} />
         ) : (
           <SudokuBoard key={`sudoku-${gameKey}`} />
         )}
