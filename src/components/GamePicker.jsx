@@ -263,6 +263,13 @@ const GAMES = [
     builder: 'Clint',
     isNew: true,
   },
+  {
+    id: 'euchre',
+    name: 'Euchre',
+    description: 'Partner card game — bid, play tricks, and reach 10 points!',
+    tag: 'Strategy',
+    isNew: true,
+  },
 ]
 
 

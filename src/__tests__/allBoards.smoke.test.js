@@ -42,6 +42,10 @@ import LatchamBoard from '../components/latcham/LatchamBoard';
 import GeoffsGeometryBoard from '../components/geoffsgeometry/GeoffsGeometryBoard';
 import GreatWallBoard from '../components/greatwall/GreatWallBoard';
 import SamIAmBoard from '../components/samiam/SamIAmBoard';
+import SpaceInvadersBoard from '../components/spaceinvaders/SpaceInvadersBoard';
+import OregonTrailBoard from '../components/oregontrail/OregonTrailBoard';
+import PongBoard from '../components/pong/PongBoard';
+import EuchreBoard from '../components/euchre/EuchreBoard';
 import { puzzles } from '../data/puzzles';
 
 // Boards reachable from App.jsx's game switch, keyed by the same id used in
@@ -85,6 +89,10 @@ const BOARDS = [
   ['geoffsgeometry', () => <GeoffsGeometryBoard />],
   ['greatwall', () => <GreatWallBoard />],
   ['samiam', () => <SamIAmBoard />],
+  ['spaceinvaders', () => <SpaceInvadersBoard />],
+  ['oregontrail', () => <OregonTrailBoard />],
+  ['pong', () => <PongBoard />],
+  ['euchre', () => <EuchreBoard />],
 ];
 
 describe('game board smoke tests', () => {
