@@ -1,5 +1,5 @@
 // src/__tests__/pokerCards.test.js
-import { createDeck, sortHand, evaluateHand, RANKS } from '../data/pokerCards';
+import { createDeck, sortHand, evaluateHand } from '../data/pokerCards';
 
 describe('Poker Cards', () => {
   describe('createDeck', () => {
