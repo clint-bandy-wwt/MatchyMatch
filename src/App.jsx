@@ -1,3 +1,4 @@
+// src/App.jsx
 import { useState } from 'react'
 import Header from './components/Header'
 import { useDarkMode } from './hooks/useDarkMode'
@@ -45,6 +46,7 @@ import SpaceInvadersBoard from './components/spaceinvaders/SpaceInvadersBoard'
 import { puzzles } from './data/puzzles'
 import OregonTrailBoard from './components/oregontrail/OregonTrailBoard'
 import PongBoard from './components/pong/PongBoard'
+import OldMaidBoard from './components/oldmaid/OldMaidBoard'
 
 const envIndex = parseInt(import.meta.env.VITE_PUZZLE_INDEX, 10)
 const PUZZLE_INDEX =
@@ -167,6 +169,8 @@ function App() {
           <OregonTrailBoard key={`oregontrail-${gameKey}`} />
         ) : activeGame === 'pong' ? (
           <PongBoard key={`pong-${gameKey}`} />
+        ) : activeGame === 'oldmaid' ? (
+          <OldMaidBoard key={`oldmaid-${gameKey}`} />
         ) : (
           <SudokuBoard key={`sudoku-${gameKey}`} />
         )}
