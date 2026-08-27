@@ -169,8 +169,6 @@ export default function OldMaidBoard() {
     gameState,
     message,
     isAIThinking,
-    selectedCardIndex,
-    setSelectedCardIndex,
     handlePlayerDraw,
     resetGame,
   } = useOldMaid();
@@ -247,7 +245,6 @@ export default function OldMaidBoard() {
               isBack={true}
               onClick={() => {
                 if (currentTurn === 'player' && !isAIThinking) {
-                  setSelectedCardIndex(index);
                   handlePlayerDraw(index);
                 }
               }}
@@ -272,7 +269,7 @@ export default function OldMaidBoard() {
           Your Hand ({playerHand.length} {playerHand.length === 1 ? 'card' : 'cards'})
         </div>
         <div className="flex flex-wrap gap-2 justify-center">
-          {playerHand.map((card, index) => (
+          {playerHand.map((card) => (
             <Card key={card.id} card={card} />
           ))}
         </div>

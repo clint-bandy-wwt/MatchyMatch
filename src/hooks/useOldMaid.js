@@ -22,7 +22,6 @@ export function useOldMaid() {
   const [gameState, setGameState] = useState('playing'); // 'playing', 'won', 'lost'
   const [message, setMessage] = useState('');
   const [isAIThinking, setIsAIThinking] = useState(false);
-  const [selectedCardIndex, setSelectedCardIndex] = useState(null);
 
   // Initialize game
   const initGame = useCallback(() => {
@@ -41,7 +40,6 @@ export function useOldMaid() {
     setGameState('playing');
     setMessage('Your turn! Draw a card from your opponent.');
     setIsAIThinking(false);
-    setSelectedCardIndex(null);
   }, []);
 
   // Initialize on mount
@@ -142,8 +140,6 @@ export function useOldMaid() {
     gameState,
     message,
     isAIThinking,
-    selectedCardIndex,
-    setSelectedCardIndex,
     handlePlayerDraw,
     resetGame
   };
