@@ -36,12 +36,12 @@ function drawGame(ctx) {
   const W = CANVAS_WIDTH
   const H = CANVAS_HEIGHT
 
-  // Background
-  ctx.fillStyle = '#0f172a'
+  // Background - dark green
+  ctx.fillStyle = '#0a3d0a'
   ctx.fillRect(0, 0, W, H)
 
-  // Center line (dashed)
-  ctx.strokeStyle = 'rgba(255,255,255,0.2)'
+  // Center line (dashed) - light green
+  ctx.strokeStyle = 'rgba(100, 200, 100, 0.3)'
   ctx.setLineDash([8, 8])
   ctx.lineWidth = 2
   ctx.beginPath()
@@ -52,7 +52,8 @@ function drawGame(ctx) {
 }
 
 function drawPaddles(ctx, state) {
-  ctx.fillStyle = '#fff'
+  // Paddles - bright green
+  ctx.fillStyle = '#4ade80'
 
   // Left paddle
   ctx.fillRect(20, state.leftPaddleY, PADDLE_WIDTH, PADDLE_HEIGHT)
@@ -62,21 +63,22 @@ function drawPaddles(ctx, state) {
 }
 
 function drawBall(ctx, state) {
-  // Ball with glow
-  ctx.fillStyle = 'rgba(59,130,246,0.3)'
+  // Ball glow - darker green
+  ctx.fillStyle = 'rgba(34, 197, 94, 0.3)'
   ctx.beginPath()
   ctx.arc(state.ballX, state.ballY, BALL_RADIUS + 4, 0, Math.PI * 2)
   ctx.fill()
 
-  // Ball core
-  ctx.fillStyle = '#fff'
+  // Ball core - bright lime green
+  ctx.fillStyle = '#86efac'
   ctx.beginPath()
   ctx.arc(state.ballX, state.ballY, BALL_RADIUS, 0, Math.PI * 2)
   ctx.fill()
 }
 
 function drawScore(ctx, state) {
-  ctx.fillStyle = '#fff'
+  // Score text - bright green
+  ctx.fillStyle = '#86efac'
   ctx.font = 'bold 48px sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
@@ -90,11 +92,11 @@ function drawScore(ctx, state) {
 
 function ScoreBadge({ label, value }) {
   return (
-    <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-2xl" style={{ background: 'var(--fill-tertiary)' }}>
-      <span style={{ fontSize: '1.8rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--label-primary)' }}>
+    <div className="flex flex-col items-center gap-1 px-6 py-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.2))', border: '1px solid rgba(74, 222, 128, 0.5)' }}>
+      <span style={{ fontSize: '1.8rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#86efac' }}>
         {value}
       </span>
-      <span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--label-tertiary)' }}>
+      <span style={{ fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#4ade80' }}>
         {label}
       </span>
     </div>
@@ -300,21 +302,21 @@ export default function PongBoard() {
       return (
         <div className="flex flex-col items-center gap-4">
           <div style={{ fontSize: 48 }}>🏓</div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--label-primary)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#86efac' }}>
             Pong
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--label-tertiary)', textAlign: 'center', maxWidth: 240 }}>
+          <p style={{ fontSize: '0.85rem', color: '#86efac', textAlign: 'center', maxWidth: 240, opacity: 0.9 }}>
             Classic paddle game. First to 10 wins!
           </p>
           <div className="flex gap-2 flex-wrap justify-center">
-            <button onClick={() => startGame('ai')} className="btn-primary">
+            <button onClick={() => startGame('ai')} className="btn-primary" style={{ background: '#4ade80', color: '#0a3d0a', border: 'none' }}>
               Play vs AI
             </button>
-            <button onClick={() => startGame('2player')} className="btn-primary">
+            <button onClick={() => startGame('2player')} className="btn-primary" style={{ background: '#4ade80', color: '#0a3d0a', border: 'none' }}>
               2 Player
             </button>
           </div>
-          <p style={{ fontSize: '0.7rem', color: 'var(--label-quaternary)', letterSpacing: '-0.01em', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.7rem', color: '#4ade80', letterSpacing: '-0.01em', textAlign: 'center', opacity: 0.7 }}>
             P1: ↑↓ or W/S · P2: ↑↓ or I/K · Space to pause
           </p>
         </div>
@@ -324,10 +326,10 @@ export default function PongBoard() {
       return (
         <div className="flex flex-col items-center gap-4">
           <div style={{ fontSize: 40 }}>⏸️</div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--label-primary)' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#86efac' }}>
             Paused
           </h2>
-          <button onClick={togglePause} className="btn-primary">
+          <button onClick={togglePause} className="btn-primary" style={{ background: '#4ade80', color: '#0a3d0a', border: 'none' }}>
             Resume
           </button>
         </div>
@@ -343,27 +345,27 @@ export default function PongBoard() {
               width: 64,
               height: 64,
               borderRadius: 18,
-              background: 'linear-gradient(145deg, #34c759, #30d158)',
+              background: 'linear-gradient(145deg, #4ade80, #22c55e)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: 28,
-              boxShadow: '0 8px 24px rgba(52,199,89,0.35)',
+              boxShadow: '0 8px 24px rgba(74, 222, 128, 0.35)',
             }}
           >
             🏆
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--label-primary)' }}>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#86efac' }}>
             {winnerName} Wins!
           </h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--label-tertiary)' }}>
-            Final Score: <strong style={{ color: 'var(--label-primary)' }}>{renderState.leftScore} - {renderState.rightScore}</strong>
+          <p style={{ fontSize: '0.9rem', color: '#4ade80' }}>
+            Final Score: <strong style={{ color: '#86efac' }}>{renderState.leftScore} - {renderState.rightScore}</strong>
           </p>
           <div className="flex gap-2 flex-wrap justify-center">
-            <button onClick={() => startGame(gameMode)} className="btn-primary">
+            <button onClick={() => startGame(gameMode)} className="btn-primary" style={{ background: '#4ade80', color: '#0a3d0a', border: 'none' }}>
               Play Again
             </button>
-            <button onClick={() => setRenderState({ ...initState() })} className="btn-ghost">
+            <button onClick={() => setRenderState({ ...initState() })} className="btn-ghost" style={{ color: '#4ade80' }}>
               Main Menu
             </button>
           </div>
@@ -380,7 +382,7 @@ export default function PongBoard() {
       {/* Score display */}
       <div className="w-full flex items-center justify-center gap-8">
         <ScoreBadge label={gameMode === 'ai' ? 'You' : 'P1'} value={renderState.leftScore} />
-        <div style={{ fontSize: '0.75rem', color: 'var(--label-tertiary)', letterSpacing: '-0.01em' }}>
+        <div style={{ fontSize: '0.75rem', color: '#4ade80', letterSpacing: '-0.01em' }}>
           {gameMode === 'ai' ? 'vs AI' : 'vs P2'}
         </div>
         <ScoreBadge label={gameMode === 'ai' ? 'AI' : 'P2'} value={renderState.rightScore} />
@@ -395,8 +397,8 @@ export default function PongBoard() {
           aspectRatio: `${CANVAS_WIDTH}/${CANVAS_HEIGHT}`,
           borderRadius: 18,
           overflow: 'hidden',
-          boxShadow: 'var(--shadow-lg)',
-          border: '0.5px solid var(--separator)',
+          boxShadow: '0 0 30px rgba(74, 222, 128, 0.3)',
+          border: '2px solid rgba(74, 222, 128, 0.5)',
           touchAction: 'none',
         }}
       >
@@ -416,7 +418,7 @@ export default function PongBoard() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'rgba(0,0,0,0.55)',
+              background: 'rgba(10, 61, 10, 0.75)',
               backdropFilter: 'blur(6px)',
               WebkitBackdropFilter: 'blur(6px)',
             }}
@@ -424,8 +426,9 @@ export default function PongBoard() {
             <div
               className="spring-pop flex flex-col items-center gap-4 p-7 rounded-3xl"
               style={{
-                background: 'var(--bg-surface)',
-                boxShadow: 'var(--shadow-xl)',
+                background: 'rgba(10, 61, 10, 0.95)',
+                boxShadow: '0 8px 32px rgba(74, 222, 128, 0.25)',
+                border: '1px solid rgba(74, 222, 128, 0.3)',
                 minWidth: 200,
               }}
             >
@@ -438,10 +441,10 @@ export default function PongBoard() {
       {/* In-game controls */}
       {isActive && (
         <div className="flex gap-3">
-          <button onClick={togglePause} className="btn-ghost">
+          <button onClick={togglePause} className="btn-ghost" style={{ color: '#4ade80' }}>
             {status === 'paused' ? '▶ Resume' : '⏸ Pause'}
           </button>
-          <button onClick={() => startGame(gameMode)} className="btn-ghost">
+          <button onClick={() => startGame(gameMode)} className="btn-ghost" style={{ color: '#4ade80' }}>
             🔄 Restart
           </button>
         </div>
@@ -449,7 +452,7 @@ export default function PongBoard() {
 
       <p
         className="text-center"
-        style={{ fontSize: '0.75rem', color: 'var(--label-tertiary)', letterSpacing: '-0.01em' }}
+        style={{ fontSize: '0.75rem', color: '#4ade80', letterSpacing: '-0.01em' }}
       >
         {isActive
           ? gameMode === 'ai'
