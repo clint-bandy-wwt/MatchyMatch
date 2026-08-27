@@ -302,7 +302,6 @@ function Game({ onNewGame }) {
     if (!timedOut) setToast("Skipped!");
     else setToast(`Time's up! It was ${currentRound.word}`);
     advanceRound("skipped");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gamePhase, currentRound, stopTimer]);
 
   // Time ran out. Deferred so the setState calls inside handleSkip don't
@@ -312,7 +311,6 @@ function Game({ onNewGame }) {
       const id = setTimeout(() => handleSkip(true), 0);
       return () => clearTimeout(id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, gamePhase]);
 
   // ── Letter interaction ─────────────────────────────────────────────────────
@@ -370,7 +368,6 @@ function Game({ onNewGame }) {
       }, 0);
       return () => clearTimeout(id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answerSlots]);
 
   const handleClear = () => {
