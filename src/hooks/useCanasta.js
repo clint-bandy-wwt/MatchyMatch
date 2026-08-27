@@ -332,7 +332,6 @@ export function useCanasta() {
           }
         }
 
-        let melded = false
         for (const rank in handByRank) {
           if (handByRank[rank].length >= 2) {
             const cards = handByRank[rank].slice(0, 3)
@@ -345,7 +344,6 @@ export function useCanasta() {
               setAiMelds((prev) => [...prev, newMeld])
               setAiHand((prev) => prev.filter((c) => !cards.some((mc) => mc.id === c.id)))
               setAiHasMelded(true)
-              melded = true
               break
             }
           }
