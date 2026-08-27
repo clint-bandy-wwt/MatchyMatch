@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   buildDeck,
   shuffle,
   deal,
   canPlay,
-  chooseAiCard,
-  chooseSuitForAi,
   nextPlayer,
-  drawCard,
   getLegalCards,
+  applyPlay,
+  applyDraw,
+  takeAiTurn,
+  chooseSuitForAi,
 } from './crazyEightsLogic'
 
 const PLAYER_NAMES = ['You (South)', 'West', 'North', 'East']
@@ -128,8 +129,18 @@ export default function CrazyEightsBoard() {
   const [winner, setWinner] = useState(null)
   const [message, setMessage] = useState('')
   const [showSuitPicker, setShowSuitPicker] = useState(false)
+  const [pendingEightPlay, setPendingEightPlay] = useState(null)
+  
+  // Track all timers for cleanup
+  const timersRef = useRef([])
+
+  const clearAllTimers = useCallback(() => {
+    timersRef.current.forEach(timer => clearTimeout(timer))
+    timersRef.current = []
+  }, [])
 
   const initGame = useCallback(() => {
+    clearAllTimers()
     const deck = shuffle(buildDeck())
     const { hands, drawPile } = deal(deck, 4, 5)
     
@@ -147,131 +158,141 @@ export default function CrazyEightsBoard() {
     setWinner(null)
     setMessage('Your turn!')
     setShowSuitPicker(false)
-  }, [])
+    setPendingEightPlay(null)
+  }, [clearAllTimers])
 
   useEffect(() => {
     // Initialize game on mount
     const timeout = setTimeout(() => initGame(), 0)
-    return () => clearTimeout(timeout)
-  }, [initGame])
+    timersRef.current.push(timeout)
+    return () => clearAllTimers()
+  }, [initGame, clearAllTimers])
 
-  const playCard = useCallback(
+  const handlePlayCard = useCallback(
     (playerIndex, card) => {
-      if (!gameState) return
-
-      const newHands = gameState.hands.map((h, i) =>
-        i === playerIndex ? h.filter((c) => c !== card) : h
-      )
-      const newDiscardPile = [...gameState.discardPile, card]
-
-      setGameState({
-        ...gameState,
-        hands: newHands,
-        discardPile: newDiscardPile,
-      })
-
-      // Check if player won
-      if (newHands[playerIndex].length === 0) {
-        setGameStatus('won')
-        setWinner(playerIndex)
-        setMessage(
-          playerIndex === 0 ? '🎉 You won!' : `${PLAYER_NAMES[playerIndex]} won!`
-        )
-        return
-      }
-
-      // If it's an eight, handle suit selection
-      if (card.rank === '8') {
-        if (playerIndex === 0) {
-          // Human player picks suit
-          setShowSuitPicker(true)
+      setGameState((prevState) => {
+        if (!prevState) return prevState
+        
+        const newState = applyPlay(prevState, playerIndex, card)
+        
+        // Check if player won
+        if (newState.hands[playerIndex].length === 0) {
+          setGameStatus('won')
+          setWinner(playerIndex)
+          setMessage(
+            playerIndex === 0 ? '🎉 You won!' : `${PLAYER_NAMES[playerIndex]} won!`
+          )
+          return newState
+        }
+        
+        // If it's an eight, handle suit selection
+        if (card.rank === '8') {
+          if (playerIndex === 0) {
+            // Human player picks suit
+            setPendingEightPlay({ state: newState, playerIndex })
+            setShowSuitPicker(true)
+          } else {
+            // AI picks suit - this shouldn't happen here (AI uses takeAiTurn)
+            const newSuit = chooseSuitForAi(newState.hands[playerIndex])
+            setActiveSuit(newSuit)
+            const next = nextPlayer(currentPlayer, 4)
+            setCurrentPlayer(next)
+            setMessage(
+              `${PLAYER_NAMES[playerIndex]} played an 8, changed suit to ${newSuit}. ${
+                next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
+              }`
+            )
+          }
         } else {
-          // AI picks suit
-          const newSuit = chooseSuitForAi(newHands[playerIndex])
-          setActiveSuit(newSuit)
+          setActiveSuit(card.suit)
           const next = nextPlayer(currentPlayer, 4)
           setCurrentPlayer(next)
           setMessage(
-            `${PLAYER_NAMES[playerIndex]} played an 8, changed suit to ${newSuit}. ${
-              next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
-            }`
+            next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
           )
         }
-      } else {
-        setActiveSuit(card.suit)
-        const next = nextPlayer(currentPlayer, 4)
-        setCurrentPlayer(next)
-        setMessage(
-          next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
-        )
-      }
-    },
-    [gameState, currentPlayer]
-  )
-
-  const handleSuitSelect = useCallback(
-    (suit) => {
-      setActiveSuit(suit)
-      setShowSuitPicker(false)
-      const next = nextPlayer(currentPlayer, 4)
-      setCurrentPlayer(next)
-      setMessage(
-        `You played an 8, changed suit to ${suit}. ${
-          next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
-        }`
-      )
+        
+        return newState
+      })
     },
     [currentPlayer]
   )
 
+  const handleSuitSelect = useCallback(
+    (suit) => {
+      if (pendingEightPlay) {
+        setGameState(pendingEightPlay.state)
+        setActiveSuit(suit)
+        setShowSuitPicker(false)
+        setPendingEightPlay(null)
+        const next = nextPlayer(currentPlayer, 4)
+        setCurrentPlayer(next)
+        setMessage(
+          `You played an 8, changed suit to ${suit}. ${
+            next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
+          }`
+        )
+      }
+    },
+    [currentPlayer, pendingEightPlay]
+  )
+
   const handleDrawCard = useCallback(() => {
-    if (!gameState || currentPlayer !== 0 || gameStatus !== 'playing') return
-
-    const { card, newDrawPile, newDiscardPile } = drawCard(
-      gameState.drawPile,
-      gameState.discardPile
-    )
-
-    if (!card) {
-      setMessage('No cards left to draw!')
-      return
-    }
-
-    const newHands = [...gameState.hands]
-    newHands[0] = [...newHands[0], card]
-
-    setGameState({
-      hands: newHands,
-      drawPile: newDrawPile,
-      discardPile: newDiscardPile,
-    })
-
-    const topCard = gameState.discardPile[gameState.discardPile.length - 1]
+    if (currentPlayer !== 0 || gameStatus !== 'playing') return
     
-    // Check if the drawn card is playable
-    if (canPlay(card, topCard, activeSuit)) {
-      setMessage('Drew a card you can play!')
-    } else {
-      // Can't play, pass turn
-      const next = nextPlayer(currentPlayer, 4)
-      setCurrentPlayer(next)
-      setMessage(`Drew a card but couldn't play. ${PLAYER_NAMES[next]}'s turn.`)
-    }
-  }, [gameState, currentPlayer, activeSuit, gameStatus])
+    // BUG FIX #3: Only allow draw if no legal cards
+    setGameState((prevState) => {
+      if (!prevState) return prevState
+      
+      const topCard = prevState.discardPile[prevState.discardPile.length - 1]
+      const humanHand = prevState.hands[0]
+      const legalCards = getLegalCards(humanHand, topCard, activeSuit)
+      
+      if (legalCards.length > 0) {
+        // Can't draw when holding legal cards
+        return prevState
+      }
+      
+      const newState = applyDraw(prevState, 0)
+      
+      if (!newState.drawnCard) {
+        setMessage('No cards left to draw!')
+        return newState
+      }
+      
+      // Check if the drawn card is playable
+      if (canPlay(newState.drawnCard, topCard, activeSuit)) {
+        setMessage('Drew a card you can play!')
+      } else {
+        // Can't play, pass turn
+        const next = nextPlayer(currentPlayer, 4)
+        setCurrentPlayer(next)
+        setMessage(`Drew a card but couldn't play. ${PLAYER_NAMES[next]}'s turn.`)
+      }
+      
+      return newState
+    })
+  }, [currentPlayer, activeSuit, gameStatus])
 
   const handleCardClick = useCallback(
     (card) => {
       if (currentPlayer !== 0 || gameStatus !== 'playing') return
       
-      const topCard = gameState.discardPile[gameState.discardPile.length - 1]
-      if (!canPlay(card, topCard, activeSuit)) return
-      
-      playCard(0, card)
+      setGameState((prevState) => {
+        if (!prevState) return prevState
+        
+        const topCard = prevState.discardPile[prevState.discardPile.length - 1]
+        if (!canPlay(card, topCard, activeSuit)) return prevState
+        
+        // Use functional update to avoid stale closure
+        handlePlayCard(0, card)
+        return prevState // handlePlayCard does the actual update
+      })
     },
-    [currentPlayer, gameStatus, gameState, activeSuit, playCard]
+    [currentPlayer, gameStatus, activeSuit, handlePlayCard]
   )
 
-  // AI turn logic
+  // AI turn logic - BUG FIX #1 & #2: Use functional updates and track all timers
   useEffect(() => {
     if (
       !gameState ||
@@ -282,65 +303,82 @@ export default function CrazyEightsBoard() {
       return
 
     const timer = setTimeout(() => {
-      const topCard = gameState.discardPile[gameState.discardPile.length - 1]
-      const aiHand = gameState.hands[currentPlayer]
-      const cardToPlay = chooseAiCard(aiHand, topCard, activeSuit)
-
-      if (cardToPlay) {
-        playCard(currentPlayer, cardToPlay)
-      } else {
-        // AI must draw
-        const { card, newDrawPile, newDiscardPile } = drawCard(
-          gameState.drawPile,
-          gameState.discardPile
-        )
-
-        if (card) {
-          const newHands = [...gameState.hands]
-          newHands[currentPlayer] = [...newHands[currentPlayer], card]
-
-          setGameState({
-            hands: newHands,
-            drawPile: newDrawPile,
-            discardPile: newDiscardPile,
-          })
-
-          // Check if AI can play the drawn card
-          if (canPlay(card, topCard, activeSuit)) {
-            setTimeout(() => {
-              playCard(currentPlayer, card)
-            }, AI_DELAY / 2)
-          } else {
-            // AI passes
-            const next = nextPlayer(currentPlayer, 4)
-            setCurrentPlayer(next)
-            setMessage(
-              `${PLAYER_NAMES[currentPlayer]} drew but couldn't play. ${
-                next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
-              }`
-            )
-          }
+      setGameState((prevState) => {
+        if (!prevState) return prevState
+        
+        // Execute AI turn using pure function
+        const result = takeAiTurn(prevState, currentPlayer, activeSuit)
+        
+        const newState = {
+          hands: result.hands,
+          drawPile: result.drawPile,
+          discardPile: result.discardPile,
+        }
+        
+        // Check if AI won
+        if (result.hands[currentPlayer].length === 0) {
+          setGameStatus('won')
+          setWinner(currentPlayer)
+          setMessage(`${PLAYER_NAMES[currentPlayer]} won!`)
+          return newState
+        }
+        
+        // Update suit and advance turn
+        if (result.newSuit) {
+          setActiveSuit(result.newSuit)
+        }
+        
+        const next = nextPlayer(currentPlayer, 4)
+        setCurrentPlayer(next)
+        
+        // Set message based on action
+        if (result.action === 'play') {
+          const suitMsg = result.playedCard.rank === '8' 
+            ? `, changed suit to ${result.newSuit}` 
+            : ''
+          setMessage(
+            `${PLAYER_NAMES[currentPlayer]} played ${result.playedCard.rank}${result.playedCard.suit}${suitMsg}. ${
+              next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
+            }`
+          )
+        } else if (result.action === 'draw-play') {
+          const suitMsg = result.playedCard.rank === '8' 
+            ? `, changed suit to ${result.newSuit}` 
+            : ''
+          setMessage(
+            `${PLAYER_NAMES[currentPlayer]} drew and played${suitMsg}. ${
+              next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
+            }`
+          )
+        } else if (result.action === 'draw-pass') {
+          setMessage(
+            `${PLAYER_NAMES[currentPlayer]} drew but couldn't play. ${
+              next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
+            }`
+          )
         } else {
-          // No cards to draw, pass
-          const next = nextPlayer(currentPlayer, 4)
-          setCurrentPlayer(next)
           setMessage(
             `${PLAYER_NAMES[currentPlayer]} couldn't play. ${
               next === 0 ? 'Your turn!' : `${PLAYER_NAMES[next]}'s turn.`
             }`
           )
         }
-      }
+        
+        return newState
+      })
     }, AI_DELAY)
 
-    return () => clearTimeout(timer)
+    timersRef.current.push(timer)
+    return () => {
+      clearTimeout(timer)
+      timersRef.current = timersRef.current.filter(t => t !== timer)
+    }
   }, [
     gameState,
     currentPlayer,
     activeSuit,
     gameStatus,
     showSuitPicker,
-    playCard,
   ])
 
   if (!gameState) return null

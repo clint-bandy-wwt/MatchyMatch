@@ -198,3 +198,118 @@ export function drawCard(drawPile, discardPile) {
 export function getLegalCards(hand, topCard, activeSuit) {
   return hand.filter((card) => canPlay(card, topCard, activeSuit))
 }
+
+/**
+ * Pure function: Apply a card play to game state
+ * @param {Object} state - {hands, drawPile, discardPile}
+ * @param {number} playerIndex
+ * @param {{suit: string, rank: string}} card
+ * @returns {Object} - {hands, drawPile, discardPile, playedCard}
+ */
+export function applyPlay(state, playerIndex, card) {
+  const newHands = state.hands.map((h, i) =>
+    i === playerIndex ? h.filter((c) => !(c.suit === card.suit && c.rank === card.rank)) : h
+  )
+  const newDiscardPile = [...state.discardPile, card]
+  
+  return {
+    hands: newHands,
+    drawPile: state.drawPile,
+    discardPile: newDiscardPile,
+    playedCard: card,
+  }
+}
+
+/**
+ * Pure function: Apply a card draw to game state
+ * @param {Object} state - {hands, drawPile, discardPile}
+ * @param {number} playerIndex
+ * @returns {Object} - {hands, drawPile, discardPile, drawnCard}
+ */
+export function applyDraw(state, playerIndex) {
+  const { card, newDrawPile, newDiscardPile } = drawCard(state.drawPile, state.discardPile)
+  
+  if (!card) {
+    return {
+      hands: state.hands,
+      drawPile: newDrawPile,
+      discardPile: newDiscardPile,
+      drawnCard: null,
+    }
+  }
+  
+  const newHands = state.hands.map((h, i) =>
+    i === playerIndex ? [...h, card] : h
+  )
+  
+  return {
+    hands: newHands,
+    drawPile: newDrawPile,
+    discardPile: newDiscardPile,
+    drawnCard: card,
+  }
+}
+
+/**
+ * Pure function: Execute a full AI turn
+ * @param {Object} state - {hands, drawPile, discardPile}
+ * @param {number} playerIndex
+ * @param {string} activeSuit
+ * @returns {Object} - {hands, drawPile, discardPile, action: 'play'|'draw-play'|'draw-pass'|'pass', playedCard?, drawnCard?, newSuit?}
+ */
+export function takeAiTurn(state, playerIndex, activeSuit) {
+  const topCard = state.discardPile[state.discardPile.length - 1]
+  const aiHand = state.hands[playerIndex]
+  const cardToPlay = chooseAiCard(aiHand, topCard, activeSuit)
+  
+  if (cardToPlay) {
+    const newState = applyPlay(state, playerIndex, cardToPlay)
+    let newSuit = cardToPlay.suit
+    
+    // If it's an eight, AI picks best suit
+    if (cardToPlay.rank === '8') {
+      newSuit = chooseSuitForAi(newState.hands[playerIndex])
+    }
+    
+    return {
+      ...newState,
+      action: 'play',
+      playedCard: cardToPlay,
+      newSuit,
+    }
+  }
+  
+  // AI must draw
+  const drawState = applyDraw(state, playerIndex)
+  
+  if (!drawState.drawnCard) {
+    return {
+      ...drawState,
+      action: 'pass',
+    }
+  }
+  
+  // Check if AI can play the drawn card
+  if (canPlay(drawState.drawnCard, topCard, activeSuit)) {
+    const playState = applyPlay(drawState, playerIndex, drawState.drawnCard)
+    let newSuit = drawState.drawnCard.suit
+    
+    if (drawState.drawnCard.rank === '8') {
+      newSuit = chooseSuitForAi(playState.hands[playerIndex])
+    }
+    
+    return {
+      ...playState,
+      action: 'draw-play',
+      drawnCard: drawState.drawnCard,
+      playedCard: drawState.drawnCard,
+      newSuit,
+    }
+  }
+  
+  // AI drew but can't play
+  return {
+    ...drawState,
+    action: 'draw-pass',
+  }
+}

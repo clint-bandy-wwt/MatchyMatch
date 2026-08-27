@@ -11,6 +11,9 @@ import {
   reshuffleDiscard,
   drawCard,
   getLegalCards,
+  applyPlay,
+  applyDraw,
+  takeAiTurn,
 } from '../components/crazyeights/crazyEightsLogic'
 
 describe('crazyEightsLogic', () => {
@@ -300,6 +303,154 @@ describe('crazyEightsLogic', () => {
       
       const legal = getLegalCards(hand, topCard, activeSuit)
       expect(legal.length).toBe(0)
+    })
+  })
+
+  describe('applyPlay', () => {
+    it('removes the played card from the player hand', () => {
+      const state = {
+        hands: [[{ suit: '♠', rank: '5' }, { suit: '♥', rank: '3' }]],
+        drawPile: [],
+        discardPile: [{ suit: '♠', rank: '7' }],
+      }
+      const result = applyPlay(state, 0, { suit: '♠', rank: '5' })
+      
+      expect(result.hands[0].length).toBe(1)
+      expect(result.hands[0][0]).toEqual({ suit: '♥', rank: '3' })
+      expect(result.discardPile[result.discardPile.length - 1]).toEqual({ suit: '♠', rank: '5' })
+    })
+  })
+
+  describe('applyDraw', () => {
+    it('adds drawn card to player hand', () => {
+      const state = {
+        hands: [[{ suit: '♥', rank: '3' }]],
+        drawPile: [{ suit: '♠', rank: '2' }],
+        discardPile: [{ suit: '♠', rank: '7' }],
+      }
+      const result = applyDraw(state, 0)
+      
+      expect(result.hands[0].length).toBe(2)
+      expect(result.drawnCard).toEqual({ suit: '♠', rank: '2' })
+      expect(result.drawPile.length).toBe(0)
+    })
+  })
+
+  describe('takeAiTurn', () => {
+    it('plays a card if AI has one', () => {
+      const state = {
+        hands: [[], [{ suit: '♠', rank: '5' }], [], []],
+        drawPile: [],
+        discardPile: [{ suit: '♠', rank: '7' }],
+      }
+      const result = takeAiTurn(state, 1, '♠')
+      
+      expect(result.action).toBe('play')
+      expect(result.hands[1].length).toBe(0)
+    })
+
+    it('draws if AI has no playable card', () => {
+      const state = {
+        hands: [[], [{ suit: '♥', rank: '3' }], [], []],
+        drawPile: [{ suit: '♦', rank: '2' }],
+        discardPile: [{ suit: '♠', rank: '7' }],
+      }
+      const result = takeAiTurn(state, 1, '♠')
+      
+      expect(result.action).toBe('draw-pass')
+      expect(result.hands[1].length).toBe(2)
+    })
+  })
+
+  describe('Card Conservation Invariant - 200 Full Games', () => {
+    function countCards(state) {
+      const allCards = []
+      for (const hand of state.hands) {
+        allCards.push(...hand)
+      }
+      allCards.push(...state.drawPile)
+      allCards.push(...state.discardPile)
+      return allCards
+    }
+
+    function checkInvariant(state, turnNum, gameNum) {
+      const allCards = countCards(state)
+      
+      // Must have exactly 52 cards
+      expect(allCards.length).toBe(52)
+      
+      // No duplicates
+      const cardStrings = allCards.map((c) => `${c.rank}${c.suit}`)
+      const uniqueCards = new Set(cardStrings)
+      if (uniqueCards.size !== 52) {
+        console.error(`Game ${gameNum}, Turn ${turnNum}: Duplicate cards detected!`)
+        console.error('All cards:', cardStrings.sort())
+        console.error('State:', JSON.stringify(state, null, 2))
+      }
+      expect(uniqueCards.size).toBe(52)
+    }
+
+    it('maintains exactly 52 unique cards through 200 complete games', () => {
+      const MAX_TURNS = 500 // Prevent infinite loops
+      
+      for (let gameNum = 0; gameNum < 200; gameNum++) {
+        // Initialize game
+        const deck = shuffle(buildDeck())
+        const { hands, drawPile } = deal(deck, 4, 5)
+        const discardPile = [drawPile.shift()]
+        
+        let state = { hands, drawPile, discardPile }
+        let currentPlayer = 0
+        let activeSuit = discardPile[0].suit
+        let turnNum = 0
+        let winner = null
+        
+        // Check initial state
+        checkInvariant(state, 0, gameNum)
+        
+        // Play until someone wins or max turns
+        while (!winner && turnNum < MAX_TURNS) {
+          turnNum++
+          
+          if (currentPlayer === 0) {
+            // Human simulated play
+            const topCard = state.discardPile[state.discardPile.length - 1]
+            const legalCards = getLegalCards(state.hands[0], topCard, activeSuit)
+            
+            if (legalCards.length > 0) {
+              const result = applyPlay(state, 0, legalCards[0])
+              state = { hands: result.hands, drawPile: result.drawPile, discardPile: result.discardPile }
+              activeSuit = legalCards[0].rank === '8' ? chooseSuitForAi(state.hands[0]) : legalCards[0].suit
+            } else {
+              const result = applyDraw(state, 0)
+              state = { hands: result.hands, drawPile: result.drawPile, discardPile: result.discardPile }
+            }
+          } else {
+            // AI turn
+            const result = takeAiTurn(state, currentPlayer, activeSuit)
+            state = { hands: result.hands, drawPile: result.drawPile, discardPile: result.discardPile }
+            if (result.newSuit) activeSuit = result.newSuit
+          }
+          
+          // Check invariant after every turn
+          checkInvariant(state, turnNum, gameNum)
+          
+          // Check for winner
+          if (hasWon(state.hands[currentPlayer])) {
+            winner = currentPlayer
+          }
+          
+          currentPlayer = nextPlayer(currentPlayer, 4)
+        }
+        
+        // Each game must end with a winner within bounded turns
+        if (!winner) {
+          console.error(`Game ${gameNum} exceeded ${MAX_TURNS} turns without a winner`)
+          console.error('Final state:', JSON.stringify(state, null, 2))
+        }
+        expect(winner).not.toBeNull()
+        expect(turnNum).toBeLessThan(MAX_TURNS)
+      }
     })
   })
 })
