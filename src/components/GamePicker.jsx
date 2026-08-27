@@ -265,9 +265,10 @@ const GAMES = [
   },
 ]
 
+
 // Two-color gradients cycled across the grid, adapted from the Arcade
 // design spec's tile palette.
-// design spec's tile palette.
+const TILES = [
   'linear-gradient(140deg, #0086ea 0%, #1629b4 100%)',
   'linear-gradient(140deg, #8212c4 0%, #1629b4 100%)',
   'linear-gradient(140deg, #e31c79 0%, #8212c4 100%)',
