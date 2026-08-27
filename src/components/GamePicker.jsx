@@ -255,7 +255,16 @@ const GAMES = [
     description: 'Defend Earth from waves of alien invaders!',
     tag: 'Arcade',
   },
+  {
+    id: 'pong',
+    name: 'Pong',
+    description: 'Classic paddle game — first to 10 wins!',
+    tag: 'Arcade',
+    builder: 'Clint',
+    isNew: true,
+  },
 ]
+
 
 // Two-color gradients cycled across the grid, adapted from the Arcade
 // design spec's tile palette.
