@@ -38,21 +38,20 @@ export function cardValue(card, trump) {
   const isTrump = effectiveSuit(card, trump) === trump
   const trumpTier = isTrump ? 1000 : 0
   
+  // Base rank values (same for trump and non-trump)
+  const vals = { 'A': 6, 'K': 5, 'Q': 4, 'J': 3, '10': 2, '9': 1 }
+  
   // Right bower (trump jack) = highest
-  if (card.rank === 'J' && card.suit === trump) return 11
+  if (card.rank === 'J' && card.suit === trump) return trumpTier + 11
   
   // Left bower (same color jack) = second highest
   const otherSuit = trump === '♠' ? '♣' : trump === '♣' ? '♠' : trump === '♥' ? '♦' : '♥'
-  if (card.rank === 'J' && card.suit === otherSuit) return 10
+  if (card.rank === 'J' && card.suit === otherSuit) return trumpTier + 10
   
   // Other trump cards
-  if (card.suit === trump) {
-    const vals = { 'A': 6, 'K': 5, 'Q': 4, '10': 3, '9': 2 }
-    return vals[card.rank] || 0
-  }
+  if (card.suit === trump) return trumpTier + (vals[card.rank] || 0)
   
   // Non-trump cards
-  const vals = { 'A': 6, 'K': 5, 'Q': 4, 'J': 3, '10': 2, '9': 1 }
   return trumpTier + (vals[card.rank] || 0)
 }
 
