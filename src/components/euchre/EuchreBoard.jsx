@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 // ── Card and Deck utilities ──────────────────────────────────────────
 
@@ -30,8 +30,13 @@ function cardKey(card) {
   return `${card.rank}${card.suit}`
 }
 
-function cardValue(card, trump) {
+// BUG FIX 1: Export and add trump tier so trump always beats non-trump
+export function cardValue(card, trump) {
   if (!trump) return 0
+  
+  // Check if this is trump using effectiveSuit (handles left bower)
+  const isTrump = effectiveSuit(card, trump) === trump
+  const trumpTier = isTrump ? 1000 : 0
   
   // Right bower (trump jack) = highest
   if (card.rank === 'J' && card.suit === trump) return 11
@@ -48,10 +53,10 @@ function cardValue(card, trump) {
   
   // Non-trump cards
   const vals = { 'A': 6, 'K': 5, 'Q': 4, 'J': 3, '10': 2, '9': 1 }
-  return vals[card.rank] || 0
+  return trumpTier + (vals[card.rank] || 0)
 }
 
-function effectiveSuit(card, trump) {
+export function effectiveSuit(card, trump) {
   // Left bower counts as trump suit
   if (card.rank === 'J') {
     const otherSuit = trump === '♠' ? '♣' : trump === '♣' ? '♠' : trump === '♥' ? '♦' : '♥'
@@ -60,7 +65,7 @@ function effectiveSuit(card, trump) {
   return card.suit
 }
 
-function canFollow(hand, leadSuit, trump) {
+export function canFollow(hand, leadSuit, trump) {
   return hand.some(c => effectiveSuit(c, trump) === leadSuit)
 }
 
@@ -126,16 +131,17 @@ function aiChooseTrump(hand, turnedSuit) {
   return best
 }
 
+// BUG FIX 1 & 7: Remove suit checks, use trump tier, copy arrays before sorting
 function aiPlayCard(hand, trick, trump, position, partnerPosition) {
   if (trick.length === 0) {
     // Lead: play highest trump or highest card
     const trumpCards = hand.filter(c => effectiveSuit(c, trump) === trump)
     if (trumpCards.length > 0) {
-      trumpCards.sort((a, b) => cardValue(b, trump) - cardValue(a, trump))
-      return trumpCards[0]
+      const sorted = [...trumpCards].sort((a, b) => cardValue(b, trump) - cardValue(a, trump))
+      return sorted[0]
     }
-    hand.sort((a, b) => cardValue(b, trump) - cardValue(a, trump))
-    return hand[0]
+    const sorted = [...hand].sort((a, b) => cardValue(b, trump) - cardValue(a, trump))
+    return sorted[0]
   }
   
   const leadCard = trick[0].card
@@ -146,16 +152,10 @@ function aiPlayCard(hand, trick, trump, position, partnerPosition) {
     ? hand.filter(c => effectiveSuit(c, trump) === leadSuit)
     : hand
   
-  // Determine if partner is winning
+  // Determine if partner is winning - with trump tier, cardValue handles everything
   let partnerWinning = false
   if (trick.length >= 2) {
     const winningCard = trick.reduce((best, t) => {
-      if (effectiveSuit(t.card, trump) !== leadSuit && effectiveSuit(best.card, trump) === leadSuit) {
-        return best
-      }
-      if (effectiveSuit(t.card, trump) === leadSuit && effectiveSuit(best.card, trump) !== leadSuit) {
-        return t
-      }
       return cardValue(t.card, trump) > cardValue(best.card, trump) ? t : best
     }, trick[0])
     partnerWinning = winningCard.position === partnerPosition
@@ -163,34 +163,22 @@ function aiPlayCard(hand, trick, trump, position, partnerPosition) {
   
   if (partnerWinning) {
     // Partner winning: play lowest card
-    playable.sort((a, b) => cardValue(a, trump) - cardValue(b, trump))
-    return playable[0]
+    const sorted = [...playable].sort((a, b) => cardValue(a, trump) - cardValue(b, trump))
+    return sorted[0]
   } else {
     // Try to win: play lowest winning card, or highest card if can't win
     const currentBest = trick.reduce((best, t) => {
-      if (effectiveSuit(t.card, trump) !== leadSuit && effectiveSuit(best.card, trump) === leadSuit) {
-        return best
-      }
-      if (effectiveSuit(t.card, trump) === leadSuit && effectiveSuit(best.card, trump) !== leadSuit) {
-        return t
-      }
       return cardValue(t.card, trump) > cardValue(best.card, trump) ? t : best
     }, trick[0])
     
-    const winning = playable.filter(c => {
-      const cSuit = effectiveSuit(c, trump)
-      const bSuit = effectiveSuit(currentBest.card, trump)
-      if (cSuit !== leadSuit && bSuit === leadSuit) return false
-      if (cSuit === leadSuit && bSuit !== leadSuit) return true
-      return cardValue(c, trump) > cardValue(currentBest.card, trump)
-    })
+    const winning = playable.filter(c => cardValue(c, trump) > cardValue(currentBest.card, trump))
     
     if (winning.length > 0) {
-      winning.sort((a, b) => cardValue(a, trump) - cardValue(b, trump))
-      return winning[0]
+      const sorted = [...winning].sort((a, b) => cardValue(a, trump) - cardValue(b, trump))
+      return sorted[0]
     } else {
-      playable.sort((a, b) => cardValue(a, trump) - cardValue(b, trump))
-      return playable[0]
+      const sorted = [...playable].sort((a, b) => cardValue(a, trump) - cardValue(b, trump))
+      return sorted[0]
     }
   }
 }
@@ -282,6 +270,21 @@ export default function EuchreBoard() {
   const [message, setMessage] = useState('')
   const [bidPasses, setBidPasses] = useState([])
   const [lastWinner, setLastWinner] = useState(null)
+  
+  // BUG FIX 2 & 3: Use refs to avoid stale closures in setTimeout
+  const trickRef = useRef(trick)
+  const handsRef = useRef(hands)
+  
+  useEffect(() => {
+    trickRef.current = trick
+  }, [trick])
+  
+  useEffect(() => {
+    handsRef.current = hands
+  }, [hands])
+  
+  // BUG FIX 6: Use ref to force redeal on new game
+  const dealCountRef = useRef(0)
 
   const dealCards = useCallback(() => {
     const deck = shuffleDeck(createDeck())
@@ -312,11 +315,14 @@ export default function EuchreBoard() {
     setCurrentPlayer(POSITIONS[nextIdx])
     setGamePhase('bid1')
     setMessage('Bidding round 1: Order up or pass')
-  }, [dealer])
+  }, [dealer, dealCountRef.current])
 
   useEffect(() => {
-    dealCards()
-  }, [dealCards])
+    // BUG FIX 6: Only deal when phase is 'deal'
+    if (gamePhase === 'deal') {
+      dealCards()
+    }
+  }, [gamePhase, dealCards])
 
   // Trigger AI bidding when needed
   useEffect(() => {
@@ -476,8 +482,10 @@ export default function EuchreBoard() {
         // All passed, redeal
         setMessage('All passed. Redealing...')
         setTimeout(() => {
-          const nextDealer = nextPosition(dealer)
-          setDealer(nextDealer)
+          // BUG FIX 5: Set gamePhase to retrigger deal
+          setDealer(nextPosition(dealer))
+          dealCountRef.current++
+          setGamePhase('deal')
         }, 2000)
       } else {
         setCurrentPlayer(next)
@@ -508,6 +516,7 @@ export default function EuchreBoard() {
     const newHand = hand.filter(c => cardKey(c) !== cardKey(card))
     setHands({ ...hands, South: newHand })
     
+    // BUG FIX 2: Update trick before setTimeout and pass newTrick to avoid closure
     const newTrick = [...trick, { position: 'South', card }]
     setTrick(newTrick)
     
@@ -522,19 +531,24 @@ export default function EuchreBoard() {
   }
 
   const aiPlay = (position) => {
-    const hand = hands[position]
+    // BUG FIX 2: Read from refs to get current state
+    const currentHands = handsRef.current
+    const currentTrick = trickRef.current
+    
+    const hand = currentHands[position]
     if (!hand || hand.length === 0) return
     
     const partnerPos = position === 'North' || position === 'South' ? (position === 'North' ? 'South' : 'North') : (position === 'West' ? 'East' : 'West')
-    const card = aiPlayCard(hand, trick, trump, position, partnerPos)
+    const card = aiPlayCard(hand, currentTrick, trump, position, partnerPos)
     
     const newHand = hand.filter(c => cardKey(c) !== cardKey(card))
     setHands(prev => ({ ...prev, [position]: newHand }))
     
-    const newTrick = [...trick, { position, card }]
+    const newTrick = [...currentTrick, { position, card }]
     setTrick(newTrick)
     
     if (newTrick.length === 4) {
+      // BUG FIX 2: Pass newTrick to avoid closure
       setTimeout(() => resolveTrick(newTrick), 1500)
     } else {
       const next = nextPosition(position)
@@ -547,20 +561,9 @@ export default function EuchreBoard() {
   }
 
   const resolveTrick = (completeTrick) => {
-    const leadCard = completeTrick[0].card
-    const leadSuit = effectiveSuit(leadCard, trump)
-    
+    // BUG FIX 1: Find winner using cardValue with trump tier - no suit checks needed
     let winner = completeTrick[0]
     for (const play of completeTrick) {
-      const playSuit = effectiveSuit(play.card, trump)
-      const winSuit = effectiveSuit(winner.card, trump)
-      
-      if (playSuit !== leadSuit && winSuit === leadSuit) continue
-      if (playSuit === leadSuit && winSuit !== leadSuit) {
-        winner = play
-        continue
-      }
-      
       if (cardValue(play.card, trump) > cardValue(winner.card, trump)) {
         winner = play
       }
@@ -572,8 +575,9 @@ export default function EuchreBoard() {
     
     setTrick([])
     
-    // Check if hand is over
-    if (hands.South.length === 0) {
+    // BUG FIX 3: Check current hand state from ref to avoid stale closure
+    const currentHands = handsRef.current
+    if (currentHands.South.length === 0) {
       setTimeout(() => endHand(winTeam), 1000)
     } else {
       setCurrentPlayer(winner.position)
@@ -642,6 +646,8 @@ export default function EuchreBoard() {
   const handleNewGame = () => {
     setScore({ 'N-S': 0, 'E-W': 0 })
     setDealer('South')
+    // BUG FIX 6: Increment to force redeal
+    dealCountRef.current++
     setGamePhase('deal')
   }
 
