@@ -96,6 +96,12 @@
   background: linear-gradient(135deg, #0077d4 0%, #1420a0 100%);
 }
 
+.oregon-btn-active {
+  background: linear-gradient(135deg, #39a283 0%, #0086ea 100%);
+  color: white;
+  border: none;
+}
+
 .oregon-btn-small {
   padding: 0.25rem 0.75rem;
   font-size: 0.9rem;
@@ -451,6 +457,13 @@
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.oregon-shop-mode {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
   margin-bottom: 2rem;
 }
 
@@ -473,6 +486,13 @@
 .oregon-shop-item-name {
   font-weight: 600;
   color: var(--text-primary);
+  flex: 1;
+}
+
+.oregon-shop-stock {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: normal;
 }
 
 .oregon-shop-controls {
@@ -502,6 +522,89 @@
   justify-content: center;
 }
 
+/* River Crossing Screen */
+.oregon-river {
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.oregon-river h2 {
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.oregon-river-info {
+  background: var(--bg-tertiary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.oregon-river-info p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.oregon-river-prompt {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.oregon-river-choices {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.oregon-river-choice {
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.oregon-river-choice button {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.oregon-choice-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.risk-high {
+  color: #e31c79;
+  font-weight: 700;
+}
+
+.risk-medium {
+  color: #ff9800;
+  font-weight: 700;
+}
+
+.risk-low {
+  color: #39a283;
+  font-weight: 700;
+}
+
+.warning {
+  color: #e31c79;
+  font-weight: 600;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .oregon-intro h1 {
@@ -522,5 +625,13 @@
 
   .oregon-hunting-target {
     font-size: 2.5rem;
+  }
+
+  .oregon-river h2 {
+    font-size: 1.5rem;
+  }
+
+  .oregon-shop-mode {
+    flex-direction: column;
   }
 }
