@@ -8,7 +8,8 @@ const STARTING_SUPPLIES = {
   oxen: 3,
   ammunition: 50,
   clothing: 5,
-  parts: 3
+  parts: 3,
+  medicine: 2
 }
 
 const PACE_SETTINGS = {
@@ -23,6 +24,14 @@ const RATION_SETTINGS = {
   barebones: { foodConsumption: 1, healthBonus: -1, name: 'Bare bones' }
 }
 
+const RIVERS = [
+  { name: 'Kansas River', location: 102, depth: 2.5, width: 200 },
+  { name: 'Big Blue River', location: 185, depth: 3.0, width: 250 },
+  { name: 'Platte River', location: 450, depth: 1.5, width: 400 },
+  { name: 'Green River', location: 1250, depth: 4.0, width: 300 },
+  { name: 'Snake River', location: 1650, depth: 5.0, width: 350 }
+]
+
 const RANDOM_EVENTS = [
   { type: 'illness', message: 'Your party has contracted dysentery!', health: -20, chance: 0.15 },
   { type: 'illness', message: 'Someone broke their leg!', health: -15, chance: 0.1 },
@@ -32,12 +41,11 @@ const RANDOM_EVENTS = [
   { type: 'weather', message: 'A storm slowed your progress.', progress: -10, chance: 0.2 },
   { type: 'goodWeather', message: 'Perfect weather! You made great progress!', progress: 15, chance: 0.15 },
   { type: 'trade', message: 'You traded with friendly travelers!', food: 20, health: 5, chance: 0.1 },
-  { type: 'find', message: 'You found abandoned supplies!', food: 25, ammunition: 10, chance: 0.08 },
-  { type: 'river', message: 'You had to ford a river. Supplies got wet.', food: -15, clothing: -1, chance: 0.12 }
+  { type: 'find', message: 'You found abandoned supplies!', food: 25, ammunition: 10, chance: 0.08 }
 ]
 
 export default function OregonTrailBoard() {
-  const [gameState, setGameState] = useState('intro') // intro, playing, hunting, shop, gameover, victory
+  const [gameState, setGameState] = useState('intro') // intro, playing, hunting, shop, river, gameover, victory
   const [distance, setDistance] = useState(0)
   const [supplies, setSupplies] = useState(STARTING_SUPPLIES)
   const [health, setHealth] = useState(100)
@@ -46,6 +54,7 @@ export default function OregonTrailBoard() {
   const [day, setDay] = useState(1)
   const [message, setMessage] = useState('')
   const [eventLog, setEventLog] = useState([])
+  const [crossedRivers, setCrossedRivers] = useState([])
   
   // Hunting mini-game state
   const [huntingTarget, setHuntingTarget] = useState(null)
@@ -54,6 +63,11 @@ export default function OregonTrailBoard() {
 
   // Shop state
   const [shopSelection, setShopSelection] = useState({})
+  const [shopMode, setShopMode] = useState('buy') // 'buy' or 'sell'
+  
+  // River crossing state
+  const [currentRiver, setCurrentRiver] = useState(null)
+  const [riverWeather, setRiverWeather] = useState('calm')
   
   // Ref to track if we've already logged game over
   const gameOverLoggedRef = useRef(false)
@@ -85,6 +99,7 @@ export default function OregonTrailBoard() {
           ammunition: Math.max(0, prev.ammunition + (event.ammunition || 0)),
           clothing: Math.max(0, prev.clothing + (event.clothing || 0)),
           parts: Math.max(0, prev.parts + (event.parts || 0)),
+          medicine: Math.max(0, prev.medicine + (event.medicine || 0)),
           money: Math.max(0, prev.money + (event.money || 0))
         }))
         
@@ -101,6 +116,19 @@ export default function OregonTrailBoard() {
       }
     }
   }, [addLog])
+
+  const checkForRiver = useCallback(() => {
+    const uncrossedRiver = RIVERS.find(
+      river => distance >= river.location && !crossedRivers.includes(river.name)
+    )
+    
+    if (uncrossedRiver) {
+      setCurrentRiver(uncrossedRiver)
+      setRiverWeather(Math.random() < 0.3 ? 'rough' : 'calm')
+      setGameState('river')
+      addLog(`You have reached the ${uncrossedRiver.name}!`)
+    }
+  }, [distance, crossedRivers, addLog])
 
   const advanceDay = useCallback(() => {
     const currentPace = PACE_SETTINGS[pace]
@@ -153,6 +181,13 @@ export default function OregonTrailBoard() {
     return () => clearInterval(timer)
   }, [gameState, advanceDay])
 
+  // Check for rivers after distance changes
+  useEffect(() => {
+    if (gameState === 'playing') {
+      checkForRiver()
+    }
+  }, [distance, gameState, checkForRiver])
+
   const endHunting = useCallback(() => {
     const foodGained = Math.floor(huntingScore / 2)
     setSupplies(prev => ({ ...prev, food: prev.food + foodGained }))
@@ -166,7 +201,6 @@ export default function OregonTrailBoard() {
     
     if (distance >= TOTAL_DISTANCE) {
       gameOverLoggedRef.current = true
-      // Queue state updates
       setTimeout(() => {
         addLog('You made it to Oregon!')
         setGameState('victory')
@@ -244,11 +278,12 @@ export default function OregonTrailBoard() {
   const openShop = () => {
     setGameState('shop')
     setShopSelection({})
+    setShopMode('buy')
   }
 
   const buyItems = () => {
+    const prices = { food: 0.2, ammunition: 2, clothing: 10, parts: 20, oxen: 40, medicine: 25 }
     const cost = Object.entries(shopSelection).reduce((sum, [item, qty]) => {
-      const prices = { food: 0.2, ammunition: 2, clothing: 10, parts: 20, oxen: 40 }
       return sum + (prices[item] || 0) * qty
     }, 0)
     
@@ -265,10 +300,127 @@ export default function OregonTrailBoard() {
       ammunition: prev.ammunition + (shopSelection.ammunition || 0),
       clothing: prev.clothing + (shopSelection.clothing || 0),
       parts: prev.parts + (shopSelection.parts || 0),
-      oxen: prev.oxen + (shopSelection.oxen || 0)
+      oxen: prev.oxen + (shopSelection.oxen || 0),
+      medicine: prev.medicine + (shopSelection.medicine || 0)
     }))
     
     addLog(`Spent $${cost.toFixed(2)} at the general store`)
+    setGameState('playing')
+  }
+
+  const sellItems = () => {
+    const prices = { food: 0.15, ammunition: 1.5, clothing: 7, parts: 15, medicine: 20 }
+    const earnings = Object.entries(shopSelection).reduce((sum, [item, qty]) => {
+      return sum + (prices[item] || 0) * qty
+    }, 0)
+    
+    // Check if we have enough items to sell
+    for (const [item, qty] of Object.entries(shopSelection)) {
+      if (supplies[item] < qty) {
+        setMessage(`You don't have enough ${item} to sell!`)
+        setTimeout(() => setMessage(''), 2000)
+        return
+      }
+    }
+    
+    setSupplies(prev => ({
+      ...prev,
+      money: prev.money + earnings,
+      food: prev.food - (shopSelection.food || 0),
+      ammunition: prev.ammunition - (shopSelection.ammunition || 0),
+      clothing: prev.clothing - (shopSelection.clothing || 0),
+      parts: prev.parts - (shopSelection.parts || 0),
+      medicine: prev.medicine - (shopSelection.medicine || 0)
+    }))
+    
+    addLog(`Earned $${earnings.toFixed(2)} by selling supplies`)
+    setGameState('playing')
+  }
+
+  const crossRiver = (method) => {
+    if (!currentRiver) return
+    
+    let success = true
+    let losses = {}
+    
+    const weatherMultiplier = riverWeather === 'rough' ? 1.5 : 1.0
+    
+    switch (method) {
+      case 'ford':
+        // Risky but free
+        const fordRisk = (currentRiver.depth / 5) * weatherMultiplier
+        if (Math.random() < fordRisk) {
+          success = false
+          losses = {
+            food: Math.floor(Math.random() * 50 + 20),
+            clothing: Math.floor(Math.random() * 2),
+            health: Math.floor(Math.random() * 30 + 10)
+          }
+          addLog(`Fording the ${currentRiver.name} went badly! You lost supplies and party members were injured.`)
+        } else {
+          addLog(`You successfully forded the ${currentRiver.name}!`)
+        }
+        break
+        
+      case 'caulk':
+        // Medium risk, uses parts
+        if (supplies.parts < 1) {
+          setMessage('Not enough wagon parts to caulk the wagon!')
+          setTimeout(() => setMessage(''), 2000)
+          return
+        }
+        const caulkRisk = (currentRiver.depth / 8) * weatherMultiplier
+        losses.parts = 1
+        if (Math.random() < caulkRisk) {
+          success = false
+          losses = {
+            ...losses,
+            food: Math.floor(Math.random() * 30 + 10),
+            health: Math.floor(Math.random() * 20 + 5)
+          }
+          addLog(`Caulking failed! The wagon took on water crossing the ${currentRiver.name}.`)
+        } else {
+          addLog(`You caulked the wagon and floated across the ${currentRiver.name}!`)
+        }
+        break
+        
+      case 'ferry':
+        // Safe but expensive
+        const ferryCost = Math.floor(currentRiver.depth * 5 + currentRiver.width * 0.1)
+        if (supplies.money < ferryCost) {
+          setMessage(`The ferry costs $${ferryCost}. You don't have enough money!`)
+          setTimeout(() => setMessage(''), 2000)
+          return
+        }
+        losses.money = ferryCost
+        addLog(`You paid $${ferryCost} to take the ferry across the ${currentRiver.name}.`)
+        break
+        
+      case 'wait':
+        // Wait for better conditions
+        const waitDays = Math.floor(Math.random() * 3 + 2)
+        losses.food = waitDays * RATION_SETTINGS[rations].foodConsumption
+        setDay(prev => prev + waitDays)
+        addLog(`You waited ${waitDays} days for the river to calm. Used ${losses.food} lbs of food.`)
+        break
+    }
+    
+    // Apply losses
+    setSupplies(prev => ({
+      ...prev,
+      food: Math.max(0, prev.food - (losses.food || 0)),
+      clothing: Math.max(0, prev.clothing - (losses.clothing || 0)),
+      parts: Math.max(0, prev.parts - (losses.parts || 0)),
+      money: Math.max(0, prev.money - (losses.money || 0))
+    }))
+    
+    if (losses.health) {
+      setHealth(prev => Math.max(0, prev - losses.health))
+    }
+    
+    // Mark river as crossed
+    setCrossedRivers(prev => [...prev, currentRiver.name])
+    setCurrentRiver(null)
     setGameState('playing')
   }
 
@@ -282,6 +434,7 @@ export default function OregonTrailBoard() {
     setDay(1)
     setMessage('')
     setEventLog([])
+    setCrossedRivers([])
     gameOverLoggedRef.current = false
   }
 
@@ -305,6 +458,7 @@ export default function OregonTrailBoard() {
               <li>🔫 Ammunition: {STARTING_SUPPLIES.ammunition} bullets</li>
               <li>👕 Clothing: {STARTING_SUPPLIES.clothing} sets</li>
               <li>🔧 Wagon Parts: {STARTING_SUPPLIES.parts}</li>
+              <li>💊 Medicine: {STARTING_SUPPLIES.medicine}</li>
             </ul>
           </div>
           <button className="oregon-btn oregon-btn-primary" onClick={startGame}>
@@ -360,9 +514,86 @@ export default function OregonTrailBoard() {
     )
   }
 
+  // River crossing screen
+  if (gameState === 'river' && currentRiver) {
+    const ferryCost = Math.floor(currentRiver.depth * 5 + currentRiver.width * 0.1)
+    
+    return (
+      <div className="oregon-trail">
+        <div className="oregon-river">
+          <h2>🌊 {currentRiver.name} 🌊</h2>
+          <div className="oregon-river-info">
+            <p><strong>River Depth:</strong> {currentRiver.depth} feet</p>
+            <p><strong>River Width:</strong> {currentRiver.width} feet</p>
+            <p><strong>Weather Conditions:</strong> {riverWeather === 'rough' ? '⛈️ Rough' : '☀️ Calm'}</p>
+          </div>
+          
+          <p className="oregon-river-prompt">
+            You must cross the river. Choose your strategy carefully!
+          </p>
+          
+          <div className="oregon-river-choices">
+            <div className="oregon-river-choice">
+              <button className="oregon-btn oregon-btn-primary" onClick={() => crossRiver('ford')}>
+                🚶 Ford the River
+              </button>
+              <p className="oregon-choice-desc">
+                Risk: <span className="risk-high">High</span> | Cost: Free<br/>
+                Wade through the water. Risk losing supplies and health.
+              </p>
+            </div>
+            
+            <div className="oregon-river-choice">
+              <button 
+                className="oregon-btn oregon-btn-primary" 
+                onClick={() => crossRiver('caulk')}
+                disabled={supplies.parts < 1}
+              >
+                🛶 Caulk the Wagon
+              </button>
+              <p className="oregon-choice-desc">
+                Risk: <span className="risk-medium">Medium</span> | Cost: 1 wagon part<br/>
+                Float the wagon across. Safer than fording.
+                {supplies.parts < 1 && <span className="warning"> (Need parts!)</span>}
+              </p>
+            </div>
+            
+            <div className="oregon-river-choice">
+              <button 
+                className="oregon-btn oregon-btn-primary" 
+                onClick={() => crossRiver('ferry')}
+                disabled={supplies.money < ferryCost}
+              >
+                ⛴️ Take the Ferry
+              </button>
+              <p className="oregon-choice-desc">
+                Risk: <span className="risk-low">Low</span> | Cost: ${ferryCost}<br/>
+                Pay for safe passage across the river.
+                {supplies.money < ferryCost && <span className="warning"> (Need ${ferryCost}!)</span>}
+              </p>
+            </div>
+            
+            <div className="oregon-river-choice">
+              <button className="oregon-btn" onClick={() => crossRiver('wait')}>
+                ⏰ Wait for Conditions to Improve
+              </button>
+              <p className="oregon-choice-desc">
+                Risk: <span className="risk-low">Low</span> | Cost: 2-4 days of food<br/>
+                Wait for the river to calm. Uses time and food.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Shop screen
   if (gameState === 'shop') {
-    const prices = { food: 0.2, ammunition: 2, clothing: 10, parts: 20, oxen: 40 }
+    const buyPrices = { food: 0.2, ammunition: 2, clothing: 10, parts: 20, oxen: 40, medicine: 25 }
+    const sellPrices = { food: 0.15, ammunition: 1.5, clothing: 7, parts: 15, medicine: 20 }
+    const prices = shopMode === 'buy' ? buyPrices : sellPrices
+    
     const totalCost = Object.entries(shopSelection).reduce((sum, [item, qty]) => {
       return sum + (prices[item] || 0) * qty
     }, 0)
@@ -370,49 +601,79 @@ export default function OregonTrailBoard() {
     return (
       <div className="oregon-trail">
         <div className="oregon-shop">
-          <h2>🏪 General Store</h2>
+          <h2>🏪 General Store & Trading Post</h2>
           <p className="oregon-money">Your money: ${supplies.money}</p>
           
-          <div className="oregon-shop-items">
-            {Object.entries(prices).map(([item, price]) => (
-              <div key={item} className="oregon-shop-item">
-                <span className="oregon-shop-item-name">
-                  {item.charAt(0).toUpperCase() + item.slice(1)} (${price.toFixed(2)})
-                </span>
-                <div className="oregon-shop-controls">
-                  <button
-                    className="oregon-btn-small"
-                    onClick={() => setShopSelection(prev => ({
-                      ...prev,
-                      [item]: Math.max(0, (prev[item] || 0) - 1)
-                    }))}
-                  >
-                    -
-                  </button>
-                  <span className="oregon-shop-qty">{shopSelection[item] || 0}</span>
-                  <button
-                    className="oregon-btn-small"
-                    onClick={() => setShopSelection(prev => ({
-                      ...prev,
-                      [item]: (prev[item] || 0) + 1
-                    }))}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="oregon-shop-mode">
+            <button 
+              className={`oregon-btn ${shopMode === 'buy' ? 'oregon-btn-active' : ''}`}
+              onClick={() => {
+                setShopMode('buy')
+                setShopSelection({})
+              }}
+            >
+              💰 Buy
+            </button>
+            <button 
+              className={`oregon-btn ${shopMode === 'sell' ? 'oregon-btn-active' : ''}`}
+              onClick={() => {
+                setShopMode('sell')
+                setShopSelection({})
+              }}
+            >
+              💵 Sell
+            </button>
           </div>
           
-          <p className="oregon-total">Total: ${totalCost.toFixed(2)}</p>
+          <div className="oregon-shop-items">
+            {Object.entries(prices).map(([item, price]) => {
+              if (item === 'oxen' && shopMode === 'sell') return null // Can't sell oxen
+              
+              return (
+                <div key={item} className="oregon-shop-item">
+                  <span className="oregon-shop-item-name">
+                    {item.charAt(0).toUpperCase() + item.slice(1)} 
+                    (${price.toFixed(2)})
+                    {shopMode === 'sell' && <span className="oregon-shop-stock"> [You have: {supplies[item]}]</span>}
+                  </span>
+                  <div className="oregon-shop-controls">
+                    <button
+                      className="oregon-btn-small"
+                      onClick={() => setShopSelection(prev => ({
+                        ...prev,
+                        [item]: Math.max(0, (prev[item] || 0) - 1)
+                      }))}
+                    >
+                      -
+                    </button>
+                    <span className="oregon-shop-qty">{shopSelection[item] || 0}</span>
+                    <button
+                      className="oregon-btn-small"
+                      onClick={() => setShopSelection(prev => ({
+                        ...prev,
+                        [item]: (prev[item] || 0) + 1
+                      }))}
+                      disabled={shopMode === 'sell' && (shopSelection[item] || 0) >= supplies[item]}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          
+          <p className="oregon-total">
+            {shopMode === 'buy' ? 'Total Cost' : 'Total Earnings'}: ${totalCost.toFixed(2)}
+          </p>
           
           <div className="oregon-shop-buttons">
             <button
               className="oregon-btn oregon-btn-primary"
-              onClick={buyItems}
-              disabled={totalCost > supplies.money || totalCost === 0}
+              onClick={shopMode === 'buy' ? buyItems : sellItems}
+              disabled={totalCost === 0 || (shopMode === 'buy' && totalCost > supplies.money)}
             >
-              Buy Items
+              {shopMode === 'buy' ? 'Buy Items' : 'Sell Items'}
             </button>
             <button className="oregon-btn" onClick={() => setGameState('playing')}>
               Leave Store
@@ -512,6 +773,7 @@ export default function OregonTrailBoard() {
             <div>🔫 Ammo: {supplies.ammunition}</div>
             <div>👕 Clothing: {supplies.clothing}</div>
             <div>🔧 Parts: {supplies.parts}</div>
+            <div>💊 Medicine: {supplies.medicine}</div>
           </div>
         </div>
 
