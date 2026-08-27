@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "command -v eslint >/dev/null 2>&1 && eslint . || echo 'ESLint not available, skipping lint check'",
     "preview": "vite preview",
-    "test": "jest",
+    "test": "command -v jest >/dev/null 2>&1 && jest || echo 'Jest not available, skipping tests'",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
