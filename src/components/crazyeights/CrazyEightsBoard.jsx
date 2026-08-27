@@ -7,7 +7,6 @@ import {
   chooseAiCard,
   chooseSuitForAi,
   nextPlayer,
-  hasWon,
   drawCard,
   getLegalCards,
 } from './crazyEightsLogic'
@@ -129,7 +128,6 @@ export default function CrazyEightsBoard() {
   const [winner, setWinner] = useState(null)
   const [message, setMessage] = useState('')
   const [showSuitPicker, setShowSuitPicker] = useState(false)
-  const [pendingEightCard, setPendingEightCard] = useState(null)
 
   const initGame = useCallback(() => {
     const deck = shuffle(buildDeck())
@@ -149,11 +147,12 @@ export default function CrazyEightsBoard() {
     setWinner(null)
     setMessage('Your turn!')
     setShowSuitPicker(false)
-    setPendingEightCard(null)
   }, [])
 
   useEffect(() => {
-    initGame()
+    // Initialize game on mount
+    const timeout = setTimeout(() => initGame(), 0)
+    return () => clearTimeout(timeout)
   }, [initGame])
 
   const playCard = useCallback(
@@ -185,7 +184,6 @@ export default function CrazyEightsBoard() {
       if (card.rank === '8') {
         if (playerIndex === 0) {
           // Human player picks suit
-          setPendingEightCard(card)
           setShowSuitPicker(true)
         } else {
           // AI picks suit
@@ -215,7 +213,6 @@ export default function CrazyEightsBoard() {
     (suit) => {
       setActiveSuit(suit)
       setShowSuitPicker(false)
-      setPendingEightCard(null)
       const next = nextPlayer(currentPlayer, 4)
       setCurrentPlayer(next)
       setMessage(
