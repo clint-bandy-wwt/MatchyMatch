@@ -65,7 +65,7 @@ export default function Card({
   const cardClasses = clsx(
     'cribbage-card',
     'relative rounded-lg select-none transition-all duration-200',
-    'flex flex-col items-center justify-between',
+    'flex flex-col items-center justify-center',
     sizeClasses[size],
     {
       'cribbage-card-selected': isSelected && !isHidden,
@@ -90,7 +90,7 @@ export default function Card({
         // Card front
         <>
           {/* Top rank and suit */}
-          <div className="flex flex-col items-center pt-0.5 leading-tight">
+          <div className="flex flex-col items-center gap-0 leading-none mb-1">
             <div className={clsx('font-bold leading-none', rankSizes[size])} style={{ color: suitColor }}>
               {card.rank}
             </div>
@@ -100,12 +100,12 @@ export default function Card({
           </div>
 
           {/* Center suit symbol */}
-          <div className={clsx('leading-none my-auto', suitSizes[size])} style={{ color: suitColor }}>
+          <div className={clsx('leading-none my-2', suitSizes[size])} style={{ color: suitColor }}>
             {suitSymbol}
           </div>
 
           {/* Bottom rank and suit (upside down) */}
-          <div className="flex flex-col items-center pb-0.5 rotate-180 leading-tight">
+          <div className="flex flex-col items-center gap-0 leading-none mt-1 rotate-180">
             <div className={clsx('font-bold leading-none', rankSizes[size])} style={{ color: suitColor }}>
               {card.rank}
             </div>
