@@ -393,7 +393,7 @@ export default function EuchreBoard() {
   }, [gameState, currentPlayer, hands, upCard, dealer, biddingRound, handleBid, dealerDiscarding])
   
   // Handle dealer discard
-  const handleDealerDiscard = (card) => {
+  const handleDealerDiscard = useCallback((card) => {
     const newHands = { ...hands }
     newHands[dealer] = newHands[dealer].filter(c => !(c.rank === card.rank && c.suit === card.suit))
     setHands(newHands)
@@ -404,7 +404,26 @@ export default function EuchreBoard() {
     const firstPlayer = POSITIONS[(dealerIdx + 1) % 4]
     setCurrentPlayer(firstPlayer)
     setGameState('playing')
-  }
+  }, [dealer, hands])
+  
+  // AI dealer discard
+  useEffect(() => {
+    if (!dealerDiscarding || dealer === 'South' || gameState !== 'bidding') return
+    
+    const timer = setTimeout(() => {
+      // AI dealer picks lowest card to discard
+      const dealerHand = hands[dealer]
+      if (dealerHand.length === 0) return
+      
+      // Simple strategy: discard the lowest non-trump card, or lowest card if all trump
+      const nonTrump = dealerHand.filter(c => getEffectiveSuit(c, upCard.suit) !== upCard.suit)
+      const cardToDiscard = nonTrump.length > 0 ? nonTrump[0] : dealerHand[0]
+      
+      handleDealerDiscard(cardToDiscard)
+    }, 1000)
+    
+    return () => clearTimeout(timer)
+  }, [dealerDiscarding, dealer, gameState, hands, upCard, handleDealerDiscard])
   
   // Handle card play
   const handleCardPlay = useCallback((card) => {
