@@ -263,6 +263,13 @@ const GAMES = [
     builder: 'Clint',
     isNew: true,
   },
+  {
+    id: 'euchre',
+    name: 'Euchre',
+    description: '24-card trick-taking game with partnerships — first to 10 wins!',
+    tag: 'Strategy',
+    isNew: true,
+  },
 ]
 
 
