@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ function evaluateTrumpStrength(hand, trump) {
 }
 
 function aiPlayCard(state, position) {
-  const { hands, currentTrick, trump, leadSuit, alonePlayer } = state
+  const { hands, currentTrick, trump, leadSuit } = state
   const hand = hands[position]
   
   if (hand.length === 0) return null
@@ -250,6 +250,7 @@ function getCurrentTrickWinner(trick, leadSuit, trump) {
 
 export default function EuchreBoard() {
   const [state, setState] = useState(initState)
+  const handlersRef = useRef({})
   
   const advanceToNextPlayer = useCallback((currentPos) => {
     const currentIndex = POSITIONS.indexOf(currentPos)
@@ -260,35 +261,6 @@ export default function EuchreBoard() {
   const getTeam = useCallback((position) => {
     return position === 'South' || position === 'North' ? 'SouthNorth' : 'WestEast'
   }, [])
-  
-  // AI turn processing
-  useEffect(() => {
-    if (state.currentPlayer === 'South') return
-    if (state.phase === 'game_over') return
-    if (state.phase === 'trick_complete') return
-    if (state.phase === 'hand_complete') return
-    
-    const timer = setTimeout(() => {
-      if (state.phase === 'bidding') {
-        const decision = aiDecideBid(state, state.currentPlayer)
-        handleBidDecision(decision)
-      } else if (state.phase === 'dealer_discard' && state.currentPlayer === state.dealer) {
-        // AI dealer discards lowest card
-        const hand = state.hands[state.dealer]
-        const sortedHand = [...hand].sort((a, b) => 
-          getCardValue(a, state.trump) - getCardValue(b, state.trump)
-        )
-        handleDealerDiscard(sortedHand[0])
-      } else if (state.phase === 'playing') {
-        const card = aiPlayCard(state, state.currentPlayer)
-        if (card) {
-          handlePlayCard(card)
-        }
-      }
-    }, 800)
-    
-    return () => clearTimeout(timer)
-  }, [state.currentPlayer, state.phase])
   
   const handleBidDecision = useCallback((decision) => {
     setState(prevState => {
@@ -545,6 +517,44 @@ export default function EuchreBoard() {
     setState(initState())
   }, [])
   
+  // Store handlers in ref inside useEffect
+  useEffect(() => {
+    handlersRef.current = {
+      handleBidDecision,
+      handleDealerDiscard,
+      handlePlayCard,
+    }
+  }, [handleBidDecision, handleDealerDiscard, handlePlayCard])
+  
+  // AI turn processing
+  useEffect(() => {
+    if (state.currentPlayer === 'South') return
+    if (state.phase === 'game_over') return
+    if (state.phase === 'trick_complete') return
+    if (state.phase === 'hand_complete') return
+    
+    const timer = setTimeout(() => {
+      if (state.phase === 'bidding') {
+        const decision = aiDecideBid(state, state.currentPlayer)
+        handlersRef.current.handleBidDecision(decision)
+      } else if (state.phase === 'dealer_discard' && state.currentPlayer === state.dealer) {
+        // AI dealer discards lowest card
+        const hand = state.hands[state.dealer]
+        const sortedHand = [...hand].sort((a, b) => 
+          getCardValue(a, state.trump) - getCardValue(b, state.trump)
+        )
+        handlersRef.current.handleDealerDiscard(sortedHand[0])
+      } else if (state.phase === 'playing') {
+        const card = aiPlayCard(state, state.currentPlayer)
+        if (card) {
+          handlersRef.current.handlePlayCard(card)
+        }
+      }
+    }, 800)
+    
+    return () => clearTimeout(timer)
+  }, [state])
+  
   // Render helpers
   const renderCard = (card, onClick, isUpCard = false) => {
     if (!card) return null
@@ -579,7 +589,7 @@ export default function EuchreBoard() {
     return validCards.some(c => c.suit === card.suit && c.rank === card.rank)
   }
   
-  const canDealerDiscard = (card) => {
+  const canDealerDiscard = () => {
     return state.phase === 'dealer_discard' && 
            state.currentPlayer === 'South' && 
            state.dealer === 'South'
