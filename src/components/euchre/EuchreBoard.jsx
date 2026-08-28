@@ -253,7 +253,7 @@ export default function EuchreBoard() {
         maker: g.currentPlayer,
         hands: newHands,
         currentPlayer: g.dealer,
-        message: `${POSITIONS[g.currentPlayer]} ordered up ${SUIT_NAMES[trump]}`,
+        message: g.dealer === 0 ? 'Choose a card to discard' : `${POSITIONS[g.currentPlayer]} ordered up ${SUIT_NAMES[trump]}`,
       }
     } else if (decision.action === 'callTrump') {
       return {
