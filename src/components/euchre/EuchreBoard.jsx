@@ -161,6 +161,36 @@ function aiShouldCallTrump(hand, upCardSuit) {
   return null
 }
 
+function aiMustCallTrump(hand, upCardSuit) {
+  // Dealer is stuck - must call trump. Pick the best available suit.
+  const suits = SUITS.filter(s => s !== upCardSuit)
+  
+  let bestSuit = suits[0]
+  let bestScore = -1
+  
+  for (const suit of suits) {
+    const trumpCards = hand.filter(c => {
+      const eff = getEffectiveRankSuit(c, suit)
+      return eff.suit === suit
+    })
+    
+    const strongTrump = trumpCards.filter(c => {
+      const eff = getEffectiveRankSuit(c, suit)
+      return eff.rank === 'RB' || eff.rank === 'LB' || c.rank === 'A' || c.rank === 'K'
+    })
+    
+    // Call it if we have 2+ strong trump
+    const score = trumpCards.length * 10 + strongTrump.length
+    if (score > bestScore) {
+      bestScore = score
+      bestSuit = suit
+    }
+  }
+  
+  // Return the suit with most trump and strongest cards
+  return bestSuit
+}
+
 function aiPlayCard(hand, currentTrick, trump) {
   const ledSuit = currentTrick.length > 0 ? getEffectiveRankSuit(currentTrick[0].card, trump).suit : null
   const playableCards = hand.filter(c => canPlayCard(c, hand, ledSuit, trump))
@@ -294,7 +324,13 @@ export default function EuchreBoard() {
           if (trumpSuit) {
             handleCallTrump(trumpSuit)
           } else {
-            handleBidDecision('pass')
+            // If this is the dealer, they MUST call trump (can't pass)
+            if (state.currentPlayer === state.dealer) {
+              const forcedSuit = aiMustCallTrump(state.hands[position], state.upCard.suit)
+              handleCallTrump(forcedSuit)
+            } else {
+              handleBidDecision('pass')
+            }
           }
         } else if (state.phase === 'discard') {
           const cardToDiscard = aiDiscard(state.hands[position], state.trump)
@@ -352,11 +388,15 @@ export default function EuchreBoard() {
         const newPassCount = state.passCount + 1
         if (state.currentPlayer === state.dealer) {
           // Dealer must call trump (stick the dealer)
-          setState({
-            ...state,
-            message: `Dealer must call trump. Choose a suit.`,
-            waitingForAI: POSITIONS[state.dealer] !== 'South',
-          })
+          // For human dealer, just update message; for AI dealer, handled in useEffect
+          if (POSITIONS[state.dealer] === 'South') {
+            setState({
+              ...state,
+              message: `Dealer must call trump. Choose a suit.`,
+              waitingForAI: false,
+            })
+          }
+          // AI dealer will be forced to call in the useEffect above
         } else {
           const nextPlayer = (state.currentPlayer + 1) % 4
           setState({
@@ -556,7 +596,7 @@ export default function EuchreBoard() {
           )}
           {state.phase === 'bidding2' && (
             <div className="flex flex-col items-center gap-3">
-              <p className="text-sm">Choose trump (not {state.upCard.suit}):</p>
+              <p className="text-sm">Choose trump suit (not {state.upCard.suit}){state.currentPlayer === state.dealer ? ' - Dealer must call' : ''}:</p>
               <div className="flex gap-3">
                 {SUITS.filter(s => s !== state.upCard.suit).map(suit => (
                   <button
@@ -568,6 +608,14 @@ export default function EuchreBoard() {
                   </button>
                 ))}
               </div>
+              {state.currentPlayer !== state.dealer && (
+                <button
+                  onClick={() => handleBidDecision('pass')}
+                  className="btn-secondary px-4 py-2"
+                >
+                  Pass
+                </button>
+              )}
             </div>
           )}
         </div>
