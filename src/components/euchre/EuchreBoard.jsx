@@ -680,6 +680,18 @@ export default function EuchreBoard() {
               )}
             </div>
           )}
+          
+          {/* South's hand during bidding */}
+          {currentPlayer === 'South' && (
+            <div className="flex flex-col items-center gap-2 mt-4">
+              <div className="text-sm font-semibold">Your hand:</div>
+              <div className="flex gap-2 flex-wrap justify-center">
+                {hands.South.map((card, idx) => (
+                  <div key={idx}>{renderCard(card)}</div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
       
