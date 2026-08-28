@@ -15,6 +15,11 @@ export default function Hand({
   }
 
   const isCardPlayable = (card) => {
+    // During discard phase, all cards are selectable
+    if (phase === 'discard' && owner === 'player') {
+      return true
+    }
+    // During pegging phase, only validPlays are playable
     return validPlays.some(c => c.id === card.id)
   }
 
