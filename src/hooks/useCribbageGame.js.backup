@@ -64,7 +64,7 @@ const dealHands = (deck, count = 6) => {
 /**
  * Calculate points for a set of cards (for counting phase)
  */
-const _calculateHandScore = (hand, cutCard, isCrib = false) => {
+const calculateHandScore = (hand, cutCard, isCrib = false) => {
   const allCards = [...hand, cutCard]
   let score = 0
   const scoringEvents = []
@@ -246,7 +246,7 @@ export function useCribbageGame() {
   const [playedCards, setPlayedCards] = useState([])
   const [peggingCount, setPeggingCount] = useState(0)
   const [playerDeclaredGo, setPlayerDeclaredGo] = useState(false)
-  const [_aiDeclaredGo, setAiDeclaredGo] = useState(false)
+  const [aiDeclaredGo, setAiDeclaredGo] = useState(false)
   
   // Scores
   const [playerScore, setPlayerScore] = useState(0)
@@ -261,6 +261,13 @@ export function useCribbageGame() {
   const [aiDiscarded, setAiDiscarded] = useState(false)
   const [isAIThinking, setIsAIThinking] = useState(false)
   const [gameWinner, setGameWinner] = useState(null)
+
+  /**
+   * Initialize new game
+   */
+  useEffect(() => {
+    dealCards()
+  }, [])
 
   /**
    * Deal cards for new round
@@ -285,13 +292,6 @@ export function useCribbageGame() {
     setPhase(PHASES.DISCARD)
     setMessage('Select 2 cards to discard to the crib')
   }, [])
-
-  /**
-   * Initialize new game
-   */
-  useEffect(() => {
-    dealCards()
-  }, [dealCards])
 
   /**
    * Player selects/deselects a card
@@ -621,6 +621,15 @@ export function useCribbageGame() {
   }, [phase, currentPlayer, isAIThinking, aiHand, playerHand, peggingCount, playedCards, playerDeclaredGo])
 
   /**
+   * End pegging phase and move to counting
+   */
+  const endPegging = useCallback(() => {
+    setPhase(PHASES.COUNTING)
+    setMessage('Counting hands...')
+    setTimeout(() => countHands(), 1000)
+  }, [])
+
+  /**
    * Count hands and crib
    */
   const countHands = useCallback(() => {
@@ -631,7 +640,7 @@ export function useCribbageGame() {
     
     // Count AI hand (if AI is first)
     if (firstCounter === 'ai') {
-      // Hand counting would happen here in full implementation
+      const aiHandForCounting = [...aiHand, ...playedCards.filter(c => c.player === 'ai').map(c => ({ id: c.id, suit: c.suit, rank: c.rank, value: c.value }))]
       // In actual implementation, we'd need to track the original 4 cards
       // For now, using remaining hand as approximation
       
@@ -662,15 +671,6 @@ export function useCribbageGame() {
       dealCards()
     }, 3000)
   }, [cutCard, dealer, playerScore, aiScore, aiHand, playedCards, dealCards])
-
-  /**
-   * End pegging phase and move to counting
-   */
-  const endPegging = useCallback(() => {
-    setPhase(PHASES.COUNTING)
-    setMessage('Counting hands...')
-    setTimeout(() => countHands(), 1000)
-  }, [countHands])
 
   /**
    * Start new game
