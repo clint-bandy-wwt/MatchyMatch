@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -76,9 +76,6 @@ function cardKey(card) {
 
 function aiDecideBid(hand, upCard, position, dealer, round) {
   // Simple AI bidding strategy
-  // Round 1: Order up if dealer and have 2+ trump, or if strong hand
-  // Round 2: Call trump if have strong suit
-  
   if (round === 1) {
     const trump = upCard.suit
     const trumpCards = hand.filter(c => getEffectiveSuit(c, trump) === trump)
@@ -86,19 +83,16 @@ function aiDecideBid(hand, upCard, position, dealer, round) {
     const hasLeftBower = trumpCards.some(c => isLeftBower(c, trump))
     
     if (position === dealer) {
-      // Dealer: order up if 2+ trump or has bower
       if (trumpCards.length >= 2 || hasRightBower || hasLeftBower) {
-        return { action: 'orderUp', alone: false }
+        return { action: 'orderUp' }
       }
     } else {
-      // Non-dealer: order up if 3+ trump or has both bowers
       if (trumpCards.length >= 3 || (hasRightBower && hasLeftBower)) {
-        return { action: 'orderUp', alone: false }
+        return { action: 'orderUp' }
       }
     }
     return { action: 'pass' }
   } else {
-    // Round 2: Call trump from strongest suit (not upCard suit)
     const forbidden = upCard.suit
     let bestSuit = null
     let bestCount = 0
@@ -113,13 +107,11 @@ function aiDecideBid(hand, upCard, position, dealer, round) {
     }
     
     if (position === dealer) {
-      // Dealer must call something (stick the dealer rule)
       if (!bestSuit) bestSuit = SUITS.find(s => s !== forbidden)
-      return { action: 'callTrump', suit: bestSuit, alone: false }
+      return { action: 'callTrump', suit: bestSuit }
     } else {
-      // Non-dealer: call if 3+ cards in suit
       if (bestCount >= 3) {
-        return { action: 'callTrump', suit: bestSuit, alone: false }
+        return { action: 'callTrump', suit: bestSuit }
       }
       return { action: 'pass' }
     }
@@ -127,48 +119,29 @@ function aiDecideBid(hand, upCard, position, dealer, round) {
 }
 
 function aiChooseDiscard(hand, trump) {
-  // Discard lowest non-trump card, or lowest trump if all trump
   const nonTrump = hand.filter(c => getEffectiveSuit(c, trump) !== trump)
   if (nonTrump.length > 0) {
-    let lowest = nonTrump[0]
-    let lowestVal = getCardValue(lowest, trump)
-    for (const card of nonTrump) {
-      const val = getCardValue(card, trump)
-      if (val < lowestVal) {
-        lowestVal = val
-        lowest = card
-      }
-    }
-    return lowest
+    return nonTrump.reduce((lowest, card) =>
+      getCardValue(card, trump) < getCardValue(lowest, trump) ? card : lowest
+    )
   }
-  // All trump: discard lowest
-  let lowest = hand[0]
-  let lowestVal = getCardValue(lowest, trump)
-  for (const card of hand) {
-    const val = getCardValue(card, trump)
-    if (val < lowestVal) {
-      lowestVal = val
-      lowest = card
-    }
-  }
-  return lowest
+  return hand.reduce((lowest, card) =>
+    getCardValue(card, trump) < getCardValue(lowest, trump) ? card : lowest
+  )
 }
 
 function aiPlayCard(hand, trick, trump, leadSuit) {
-  // Simple AI card play
   const playable = hand.filter(card => canPlayCard(card, hand, trump, leadSuit))
   
-  if (playable.length === 0) return hand[0] // Shouldn't happen
+  if (playable.length === 0) return hand[0]
   if (playable.length === 1) return playable[0]
   
-  // If leading, play highest trump or highest card
   if (trick.length === 0) {
     return playable.reduce((best, card) => 
       getCardValue(card, trump) > getCardValue(best, trump) ? card : best
     )
   }
   
-  // If following, try to win or dump lowest
   const currentWinner = getWinningCard(trick, trump, leadSuit)
   const canWin = playable.filter(c => 
     getEffectiveSuit(c, trump) === leadSuit &&
@@ -176,27 +149,24 @@ function aiPlayCard(hand, trick, trump, leadSuit) {
   )
   
   if (canWin.length > 0) {
-    // Win with lowest winning card
     return canWin.reduce((best, card) =>
       getCardValue(card, trump) < getCardValue(best, trump) ? card : best
     )
   }
   
-  // Can't win: dump lowest card
   return playable.reduce((best, card) =>
     getCardValue(card, trump) < getCardValue(best, trump) ? card : best
   )
 }
 
 function canPlayCard(card, hand, trump, leadSuit) {
-  if (!leadSuit) return true // Leading: can play any card
+  if (!leadSuit) return true
   
   const effSuit = getEffectiveSuit(card, trump)
-  if (effSuit === leadSuit) return true // Can always follow suit
+  if (effSuit === leadSuit) return true
   
-  // Check if we have any cards of lead suit
   const hasSuit = hand.some(c => getEffectiveSuit(c, trump) === leadSuit)
-  return !hasSuit // Can only play off-suit if we don't have lead suit
+  return !hasSuit
 }
 
 function getWinningCard(trick, trump, leadSuit) {
@@ -211,25 +181,21 @@ function getWinningCard(trick, trump, leadSuit) {
     const suit = getEffectiveSuit(card, trump)
     const value = getCardValue(card, trump)
     
-    // Trump beats non-trump
     if (suit === trump && winnerSuit !== trump) {
       winner = card
       winnerValue = value
       winnerSuit = suit
     } else if (suit === trump && winnerSuit === trump) {
-      // Both trump: higher wins
       if (value > winnerValue) {
         winner = card
         winnerValue = value
         winnerSuit = suit
       }
     } else if (winnerSuit !== trump && suit === leadSuit && winnerSuit !== leadSuit) {
-      // Winner is off-suit, this card follows lead suit
       winner = card
       winnerValue = value
       winnerSuit = suit
     } else if (suit === leadSuit && winnerSuit === leadSuit) {
-      // Both follow lead suit: higher wins
       if (value > winnerValue) {
         winner = card
         winnerValue = value
@@ -241,24 +207,19 @@ function getWinningCard(trick, trump, leadSuit) {
   return winner
 }
 
-// ── State Management ─────────────────────────────────────────────────────────
-
 function initGame() {
   return {
-    phase: 'deal', // 'deal' | 'bidRound1' | 'bidRound2' | 'discard' | 'play' | 'handEnd' | 'gameEnd'
+    phase: 'deal',
     dealer: 0,
-    currentPlayer: 1, // Player whose turn it is
-    hands: [[], [], [], []], // Cards for each player
+    currentPlayer: 1,
+    hands: [[], [], [], []],
     upCard: null,
     trump: null,
-    maker: null, // Position that called trump
-    goingAlone: false,
-    alonePlayer: null,
+    maker: null,
     bidPasses: 0,
-    currentTrick: [], // [{ player, card }, ...]
-    trickLeader: null,
-    tricksWon: [0, 0], // Tricks won by each team this hand
-    scores: [0, 0], // Game score for each team
+    currentTrick: [],
+    tricksWon: [0, 0],
+    scores: [0, 0],
     message: '',
     handNumber: 1,
   }
@@ -266,418 +227,279 @@ function initGame() {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+function dealInitialHand() {
+  const deck = shuffle(createDeck())
+  const hands = [[], [], [], []]
+  let idx = 0
+  for (let round = 0; round < 2; round++) {
+    for (let player = 0; player < 4; player++) {
+      const dealTo = (player + 1) % 4
+      const count = round === 0 ? (player < 2 ? 3 : 2) : (player < 2 ? 2 : 3)
+      hands[dealTo].push(...deck.slice(idx, idx + count))
+      idx += count
+    }
+  }
+  const upCard = deck[idx]
+  return { hands, upCard }
+}
+
 export default function EuchreBoard() {
-  const [game, setGame] = useState(initGame)
-  const timeoutRef = useRef(null)
-  const [needsInitialDeal, setNeedsInitialDeal] = useState(true)
+  const aiTimeoutRef = useRef(null)
   
+  // Cleanup timeouts
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current)
     }
   }, [])
   
-  const aiTakeTurn = useCallback(() => {
-    setGame(g => {
-      if (g.currentPlayer === 0) return g // Human's turn, don't AI
+  const [game, setGame] = useState(() => {
+    const { hands, upCard } = dealInitialHand()
+    return {
+      ...initGame(),
+      phase: 'bidRound1',
+      hands,
+      upCard,
+      currentPlayer: 1,
+      message: 'West to bid',
+    }
+  })
+  
+  const processAIBid = (g) => {
+    const decision = aiDecideBid(
+      g.hands[g.currentPlayer],
+      g.upCard,
+      g.currentPlayer,
+      g.dealer,
+      g.phase === 'bidRound1' ? 1 : 2
+    )
+    
+    if (decision.action === 'pass') {
+      const nextPlayer = (g.currentPlayer + 1) % 4
+      const newPasses = g.bidPasses + 1
       
-      if (g.phase === 'bidRound1' || g.phase === 'bidRound2') {
-        const decision = aiDecideBid(
-          g.hands[g.currentPlayer],
-          g.upCard,
-          g.currentPlayer,
-          g.dealer,
-          g.phase === 'bidRound1' ? 1 : 2
-        )
-        
-        if (decision.action === 'pass') {
-          const nextPlayer = (g.currentPlayer + 1) % 4
-          const newPasses = g.bidPasses + 1
-          
-          if (g.phase === 'bidRound1' && nextPlayer === (g.dealer + 1) % 4) {
-            // End of round 1, start round 2
-            const newState = {
-              ...g,
-              phase: 'bidRound2',
-              currentPlayer: nextPlayer,
-              bidPasses: 0,
-              message: `${POSITIONS[nextPlayer]} to call trump`,
-            }
-            
-            if (nextPlayer !== 0) {
-              timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-            }
-            return newState
-          } else if (g.phase === 'bidRound2' && newPasses === 3) {
-            // Dealer must call (stick the dealer)
-            const finalDecision = aiDecideBid(
-              g.hands[g.dealer],
-              g.upCard,
-              g.dealer,
-              g.dealer,
-              2
-            )
-            
-            const trump = finalDecision.suit
-            const newState = {
-              ...g,
-              phase: 'play',
-              trump,
-              maker: g.dealer,
-              currentPlayer: (g.dealer + 1) % 4,
-              trickLeader: (g.dealer + 1) % 4,
-              message: `${POSITIONS[g.dealer]} called ${SUIT_NAMES[trump]}. ${POSITIONS[(g.dealer + 1) % 4]} leads`,
-            }
-            
-            if ((g.dealer + 1) % 4 !== 0) {
-              timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-            }
-            return newState
-          } else {
-            const newState = {
-              ...g,
-              currentPlayer: nextPlayer,
-              bidPasses: newPasses,
-              message: `${POSITIONS[g.currentPlayer]} passes. ${POSITIONS[nextPlayer]} to bid`,
-            }
-            
-            if (nextPlayer !== 0) {
-              timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-            }
-            return newState
-          }
-        } else if (decision.action === 'orderUp') {
-          const trump = g.upCard.suit
-          const newHands = [...g.hands]
-          newHands[g.dealer].push(g.upCard)
-          
-          const newState = {
-            ...g,
-            phase: 'discard',
-            trump,
-            maker: g.currentPlayer,
-            hands: newHands,
-            currentPlayer: g.dealer,
-            message: `${POSITIONS[g.currentPlayer]} ordered up ${SUIT_NAMES[trump]}. ${POSITIONS[g.dealer]} to discard`,
-          }
-          
-          if (g.dealer !== 0) {
-            timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-          }
-          return newState
-        } else if (decision.action === 'callTrump') {
-          const trump = decision.suit
-          const newState = {
-            ...g,
-            phase: 'play',
-            trump,
-            maker: g.currentPlayer,
-            currentPlayer: (g.dealer + 1) % 4,
-            trickLeader: (g.dealer + 1) % 4,
-            message: `${POSITIONS[g.currentPlayer]} called ${SUIT_NAMES[trump]}. ${POSITIONS[(g.dealer + 1) % 4]} leads`,
-          }
-          
-          if ((g.dealer + 1) % 4 !== 0) {
-            timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-          }
-          return newState
+      if (g.phase === 'bidRound1' && nextPlayer === (g.dealer + 1) % 4) {
+        return {
+          ...g,
+          phase: 'bidRound2',
+          currentPlayer: nextPlayer,
+          bidPasses: 0,
+          message: `${POSITIONS[nextPlayer]} to call trump`,
         }
-      } else if (g.phase === 'discard') {
-        const toDiscard = aiChooseDiscard(g.hands[g.currentPlayer], g.trump)
-        const newHand = g.hands[g.currentPlayer].filter(c => cardKey(c) !== cardKey(toDiscard))
-        const newHands = [...g.hands]
-        newHands[g.currentPlayer] = newHand
-        
-        const firstPlayer = (g.dealer + 1) % 4
-        const newState = {
+      } else if (g.phase === 'bidRound2' && newPasses === 3) {
+        const finalDec = aiDecideBid(g.hands[g.dealer], g.upCard, g.dealer, g.dealer, 2)
+        return {
           ...g,
           phase: 'play',
-          hands: newHands,
-          currentPlayer: firstPlayer,
-          trickLeader: firstPlayer,
-          message: `${POSITIONS[g.currentPlayer]} discarded. ${POSITIONS[firstPlayer]} leads`,
+          trump: finalDec.suit,
+          maker: g.dealer,
+          currentPlayer: (g.dealer + 1) % 4,
+          message: `${POSITIONS[g.dealer]} called ${SUIT_NAMES[finalDec.suit]}`,
         }
-        
-        if (firstPlayer !== 0) {
-          timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-        }
-        return newState
-      } else if (g.phase === 'play') {
-        const leadSuit = g.currentTrick.length > 0 
-          ? getEffectiveSuit(g.currentTrick[0].card, g.trump)
-          : null
-        
-        const card = aiPlayCard(g.hands[g.currentPlayer], g.currentTrick, g.trump, leadSuit)
-        const newHand = g.hands[g.currentPlayer].filter(c => cardKey(c) !== cardKey(card))
-        const newHands = [...g.hands]
-        newHands[g.currentPlayer] = newHand
-        
-        const newTrick = [...g.currentTrick, { player: g.currentPlayer, card }]
-        
-        if (newTrick.length === 4) {
-          // Trick complete
-          const leadSuitFinal = getEffectiveSuit(newTrick[0].card, g.trump)
-          const winningCard = getWinningCard(newTrick, g.trump, leadSuitFinal)
-          const winner = newTrick.find(t => cardKey(t.card) === cardKey(winningCard)).player
-          const winnerTeam = PARTNERSHIPS[0].includes(winner) ? 0 : 1
-          
-          const newTricksWon = [...g.tricksWon]
-          newTricksWon[winnerTeam]++
-          
-          const allPlayed = newHands.every(h => h.length === 0)
-          
-          if (allPlayed) {
-            // Hand over
-            const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
-            const makerTricks = newTricksWon[makerTeam]
-            let points = 0
-            
-            if (makerTricks >= 3) {
-              points = makerTricks === 5 ? 2 : 1
-            } else {
-              // Euchred: other team gets 2 points
-              const otherTeam = makerTeam === 0 ? 1 : 0
-              const newScores = [...g.scores]
-              newScores[otherTeam] += 2
-              
-              const gameOver = newScores[0] >= 10 || newScores[1] >= 10
-              
-              return {
-                ...g,
-                phase: gameOver ? 'gameEnd' : 'handEnd',
-                hands: newHands,
-                currentTrick: [],
-                tricksWon: newTricksWon,
-                scores: newScores,
-                message: `Euchred! ${makerTeam === 0 ? 'East/West' : 'North/South'} wins 2 points`,
-              }
-            }
-            
-            const newScores = [...g.scores]
-            newScores[makerTeam] += points
-            
-            const gameOver = newScores[0] >= 10 || newScores[1] >= 10
-            
-            return {
-              ...g,
-              phase: gameOver ? 'gameEnd' : 'handEnd',
-              hands: newHands,
-              currentTrick: [],
-              tricksWon: newTricksWon,
-              scores: newScores,
-              message: `${makerTeam === 0 ? 'North/South' : 'East/West'} wins ${points} point(s)`,
-            }
-          } else {
-            // Next trick
-            const newState = {
-              ...g,
-              hands: newHands,
-              currentTrick: [],
-              tricksWon: newTricksWon,
-              currentPlayer: winner,
-              trickLeader: winner,
-              message: `${POSITIONS[winner]} won the trick`,
-            }
-            
-            if (winner !== 0) {
-              timeoutRef.current = setTimeout(() => aiTakeTurn(), 1200)
-            }
-            return newState
-          }
-        } else {
-          // Trick continues
-          const nextPlayer = (g.currentPlayer + 1) % 4
-          const newState = {
-            ...g,
-            hands: newHands,
-            currentTrick: newTrick,
-            currentPlayer: nextPlayer,
-            message: nextPlayer === 0 ? 'Your turn' : `${POSITIONS[nextPlayer]} to play`,
-          }
-          
-          if (nextPlayer !== 0) {
-            timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-          }
-          return newState
+      } else {
+        return {
+          ...g,
+          currentPlayer: nextPlayer,
+          bidPasses: newPasses,
+          message: `${POSITIONS[nextPlayer]} to bid`,
         }
       }
+    } else if (decision.action === 'orderUp') {
+      const trump = g.upCard.suit
+      const newHands = [...g.hands]
+      newHands[g.dealer].push(g.upCard)
       
+      return {
+        ...g,
+        phase: 'discard',
+        trump,
+        maker: g.currentPlayer,
+        hands: newHands,
+        currentPlayer: g.dealer,
+        message: `${POSITIONS[g.currentPlayer]} ordered up ${SUIT_NAMES[trump]}`,
+      }
+    } else if (decision.action === 'callTrump') {
+      return {
+        ...g,
+        phase: 'play',
+        trump: decision.suit,
+        maker: g.currentPlayer,
+        currentPlayer: (g.dealer + 1) % 4,
+        message: `${POSITIONS[g.currentPlayer]} called ${SUIT_NAMES[decision.suit]}`,
+      }
+    }
+    return g
+  }
+  
+  const processAIDiscard = (g) => {
+    const toDiscard = aiChooseDiscard(g.hands[g.currentPlayer], g.trump)
+    const newHand = g.hands[g.currentPlayer].filter(c => cardKey(c) !== cardKey(toDiscard))
+    const newHands = [...g.hands]
+    newHands[g.currentPlayer] = newHand
+    
+    return {
+      ...g,
+      phase: 'play',
+      hands: newHands,
+      currentPlayer: (g.dealer + 1) % 4,
+      message: `${POSITIONS[(g.dealer + 1) % 4]} leads`,
+    }
+  }
+  
+  const processAIPlay = (g) => {
+    const leadSuit = g.currentTrick.length > 0 
+      ? getEffectiveSuit(g.currentTrick[0].card, g.trump)
+      : null
+    
+    const card = aiPlayCard(g.hands[g.currentPlayer], g.currentTrick, g.trump, leadSuit)
+    const newHand = g.hands[g.currentPlayer].filter(c => cardKey(c) !== cardKey(card))
+    const newHands = [...g.hands]
+    newHands[g.currentPlayer] = newHand
+    
+    const newTrick = [...g.currentTrick, { player: g.currentPlayer, card }]
+    
+    if (newTrick.length === 4) {
+      const leadSuitFinal = getEffectiveSuit(newTrick[0].card, g.trump)
+      const winningCard = getWinningCard(newTrick, g.trump, leadSuitFinal)
+      const winner = newTrick.find(t => cardKey(t.card) === cardKey(winningCard)).player
+      const winnerTeam = PARTNERSHIPS[0].includes(winner) ? 0 : 1
+      
+      const newTricksWon = [...g.tricksWon]
+      newTricksWon[winnerTeam]++
+      
+      const allPlayed = newHands.every(h => h.length === 0)
+      
+      if (allPlayed) {
+        const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
+        const makerTricks = newTricksWon[makerTeam]
+        const newScores = [...g.scores]
+        
+        if (makerTricks >= 3) {
+          const points = makerTricks === 5 ? 2 : 1
+          newScores[makerTeam] += points
+        } else {
+          const otherTeam = makerTeam === 0 ? 1 : 0
+          newScores[otherTeam] += 2
+        }
+        
+        const gameOver = newScores[0] >= 10 || newScores[1] >= 10
+        
+        return {
+          ...g,
+          phase: gameOver ? 'gameEnd' : 'handEnd',
+          hands: newHands,
+          currentTrick: [],
+          tricksWon: newTricksWon,
+          scores: newScores,
+          message: `Hand over`,
+        }
+      } else {
+        return {
+          ...g,
+          hands: newHands,
+          currentTrick: [],
+          tricksWon: newTricksWon,
+          currentPlayer: winner,
+          message: `${POSITIONS[winner]} won the trick`,
+        }
+      }
+    } else {
+      const nextPlayer = (g.currentPlayer + 1) % 4
+      return {
+        ...g,
+        hands: newHands,
+        currentTrick: newTrick,
+        currentPlayer: nextPlayer,
+        message: nextPlayer === 0 ? 'Your turn' : `${POSITIONS[nextPlayer]} to play`,
+      }
+    }
+  }
+  
+  const processAITurn = () => {
+    setGame(g => {
+      if (g.currentPlayer === 0) return g
+      
+      if (g.phase === 'bidRound1' || g.phase === 'bidRound2') {
+        return processAIBid(g)
+      } else if (g.phase === 'discard') {
+        return processAIDiscard(g)
+      } else if (g.phase === 'play') {
+        return processAIPlay(g)
+      }
       return g
     })
-  }, [])
+  }
   
-  const dealHand = useCallback(() => {
-    setGame(g => {
-      const deck = shuffle(createDeck())
-      const hands = [[], [], [], []]
-      
-      // Deal 5 cards to each player (2-3-2 or 3-2-3 pattern)
-      let idx = 0
-      for (let round = 0; round < 2; round++) {
-        for (let player = 0; player < 4; player++) {
-          const dealTo = (g.dealer + 1 + player) % 4
-          const count = round === 0 ? (player < 2 ? 3 : 2) : (player < 2 ? 2 : 3)
-          hands[dealTo].push(...deck.slice(idx, idx + count))
-          idx += count
-        }
-      }
-      
-      const upCard = deck[idx]
-      const firstBidder = (g.dealer + 1) % 4
-      
-      const newState = {
-        ...g,
-        phase: 'bidRound1',
-        hands,
-        upCard,
-        currentPlayer: firstBidder,
-        bidPasses: 0,
-        currentTrick: [],
-        tricksWon: [0, 0],
-        trump: null,
-        maker: null,
-        goingAlone: false,
-        alonePlayer: null,
-        message: `${POSITIONS[firstBidder]} to bid`,
-      }
-      
-      // AI bids immediately if not human
-      if (firstBidder !== 0) {
-        timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-      }
-      
-      return newState
-    })
-  }, [aiTakeTurn])
+  // AI turn handler
+  useEffect(() => {
+    if (game.currentPlayer === 0) return
+    if (game.phase === 'handEnd' || game.phase === 'gameEnd' || game.phase === 'deal') return
+    
+    const delay = game.phase === 'play' && game.currentTrick.length === 0 ? 1200 : 800
+    
+    aiTimeoutRef.current = setTimeout(() => {
+      processAITurn()
+    }, delay)
+    
+    return () => {
+      if (aiTimeoutRef.current) clearTimeout(aiTimeoutRef.current)
+    }
+  }, [game.currentPlayer, game.phase, game.currentTrick.length, processAITurn])
   
-  const startNewHand = useCallback(() => {
+  const handleBid = (action, suit = null) => {
     setGame(g => {
-      const nextDealer = (g.dealer + 1) % 4
-      const deck = shuffle(createDeck())
-      const hands = [[], [], [], []]
-      
-      let idx = 0
-      for (let round = 0; round < 2; round++) {
-        for (let player = 0; player < 4; player++) {
-          const dealTo = (nextDealer + 1 + player) % 4
-          const count = round === 0 ? (player < 2 ? 3 : 2) : (player < 2 ? 2 : 3)
-          hands[dealTo].push(...deck.slice(idx, idx + count))
-          idx += count
-        }
-      }
-      
-      const upCard = deck[idx]
-      const firstBidder = (nextDealer + 1) % 4
-      
-      const newState = {
-        ...initGame(),
-        dealer: nextDealer,
-        scores: g.scores,
-        handNumber: g.handNumber + 1,
-        phase: 'bidRound1',
-        hands,
-        upCard,
-        currentPlayer: firstBidder,
-        message: `${POSITIONS[firstBidder]} to bid`,
-      }
-      
-      // Trigger AI if not human
-      if (firstBidder !== 0) {
-        timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-      }
-      
-      return newState
-    })
-  }, [aiTakeTurn])
-  
-  const handleBid = useCallback((action, suit = null) => {
-    setGame(g => {
-      if (g.currentPlayer !== 0) return g // Not human's turn
+      if (g.currentPlayer !== 0) return g
       
       if (action === 'pass') {
         const nextPlayer = (g.currentPlayer + 1) % 4
         const newPasses = g.bidPasses + 1
         
         if (g.phase === 'bidRound1' && nextPlayer === (g.dealer + 1) % 4) {
-          // End of round 1
-          const newState = {
+          return {
             ...g,
             phase: 'bidRound2',
             currentPlayer: nextPlayer,
             bidPasses: 0,
             message: `${POSITIONS[nextPlayer]} to call trump`,
           }
-          
-          if (nextPlayer !== 0) {
-            timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-          }
-          return newState
-        } else if (g.phase === 'bidRound2' && newPasses === 3) {
-          // Dealer stuck
-          const trump = SUITS.find(s => s !== g.upCard.suit)
-          return {
-            ...g,
-            phase: 'play',
-            trump,
-            maker: g.dealer,
-            currentPlayer: (g.dealer + 1) % 4,
-            trickLeader: (g.dealer + 1) % 4,
-            message: `${POSITIONS[g.dealer]} stuck with ${SUIT_NAMES[trump]}`,
-          }
         } else {
-          const newState = {
+          return {
             ...g,
             currentPlayer: nextPlayer,
             bidPasses: newPasses,
             message: `${POSITIONS[nextPlayer]} to bid`,
           }
-          
-          if (nextPlayer !== 0) {
-            timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-          }
-          return newState
         }
       } else if (action === 'orderUp') {
         const trump = g.upCard.suit
         const newHands = [...g.hands]
         newHands[g.dealer].push(g.upCard)
         
-        const newState = {
+        return {
           ...g,
           phase: 'discard',
           trump,
           maker: 0,
           hands: newHands,
           currentPlayer: g.dealer,
-          message: `You ordered up ${SUIT_NAMES[trump]}. ${POSITIONS[g.dealer]} to discard`,
+          message: `You ordered up ${SUIT_NAMES[trump]}`,
         }
-        
-        if (g.dealer !== 0) {
-          timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-        }
-        return newState
       } else if (action === 'callTrump') {
-        const newState = {
+        return {
           ...g,
           phase: 'play',
           trump: suit,
           maker: 0,
           currentPlayer: (g.dealer + 1) % 4,
-          trickLeader: (g.dealer + 1) % 4,
-          message: `You called ${SUIT_NAMES[suit]}. ${POSITIONS[(g.dealer + 1) % 4]} leads`,
+          message: `You called ${SUIT_NAMES[suit]}`,
         }
-        
-        if ((g.dealer + 1) % 4 !== 0) {
-          timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-        }
-        return newState
       }
       
       return g
     })
-  }, [aiTakeTurn])
+  }
   
-  const handleDiscard = useCallback((card) => {
+  const handleDiscard = (card) => {
     setGame(g => {
       if (g.phase !== 'discard' || g.currentPlayer !== 0) return g
       
@@ -685,24 +507,17 @@ export default function EuchreBoard() {
       const newHands = [...g.hands]
       newHands[0] = newHand
       
-      const firstPlayer = (g.dealer + 1) % 4
-      const newState = {
+      return {
         ...g,
         phase: 'play',
         hands: newHands,
-        currentPlayer: firstPlayer,
-        trickLeader: firstPlayer,
-        message: `${POSITIONS[firstPlayer]} leads`,
+        currentPlayer: (g.dealer + 1) % 4,
+        message: `${POSITIONS[(g.dealer + 1) % 4]} leads`,
       }
-      
-      if (firstPlayer !== 0) {
-        timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-      }
-      return newState
     })
-  }, [aiTakeTurn])
+  }
   
-  const handlePlayCard = useCallback((card) => {
+  const handlePlayCard = (card) => {
     setGame(g => {
       if (g.phase !== 'play' || g.currentPlayer !== 0) return g
       
@@ -721,7 +536,6 @@ export default function EuchreBoard() {
       const newTrick = [...g.currentTrick, { player: 0, card }]
       
       if (newTrick.length === 4) {
-        // Trick complete
         const leadSuitFinal = getEffectiveSuit(newTrick[0].card, g.trump)
         const winningCard = getWinningCard(newTrick, g.trump, leadSuitFinal)
         const winner = newTrick.find(t => cardKey(t.card) === cardKey(winningCard)).player
@@ -733,34 +547,17 @@ export default function EuchreBoard() {
         const allPlayed = newHands.every(h => h.length === 0)
         
         if (allPlayed) {
-          // Hand over
           const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
           const makerTricks = newTricksWon[makerTeam]
-          let points = 0
+          const newScores = [...g.scores]
           
           if (makerTricks >= 3) {
-            points = makerTricks === 5 ? 2 : 1
+            const points = makerTricks === 5 ? 2 : 1
+            newScores[makerTeam] += points
           } else {
-            // Euchred
             const otherTeam = makerTeam === 0 ? 1 : 0
-            const newScores = [...g.scores]
             newScores[otherTeam] += 2
-            
-            const gameOver = newScores[0] >= 10 || newScores[1] >= 10
-            
-            return {
-              ...g,
-              phase: gameOver ? 'gameEnd' : 'handEnd',
-              hands: newHands,
-              currentTrick: [],
-              tricksWon: newTricksWon,
-              scores: newScores,
-              message: `Euchred! ${makerTeam === 0 ? 'East/West' : 'North/South'} wins 2 points`,
-            }
           }
-          
-          const newScores = [...g.scores]
-          newScores[makerTeam] += points
           
           const gameOver = newScores[0] >= 10 || newScores[1] >= 10
           
@@ -771,61 +568,67 @@ export default function EuchreBoard() {
             currentTrick: [],
             tricksWon: newTricksWon,
             scores: newScores,
-            message: `${makerTeam === 0 ? 'North/South' : 'East/West'} wins ${points} point(s)`,
+            message: `Hand over`,
           }
         } else {
-          // Next trick
-          const newState = {
+          return {
             ...g,
             hands: newHands,
             currentTrick: [],
             tricksWon: newTricksWon,
             currentPlayer: winner,
-            trickLeader: winner,
             message: `${POSITIONS[winner]} won the trick`,
           }
-          
-          if (winner !== 0) {
-            timeoutRef.current = setTimeout(() => aiTakeTurn(), 1200)
-          }
-          return newState
         }
       } else {
-        // Trick continues
         const nextPlayer = (g.currentPlayer + 1) % 4
-        const newState = {
+        return {
           ...g,
           hands: newHands,
           currentTrick: newTrick,
           currentPlayer: nextPlayer,
           message: nextPlayer === 0 ? 'Your turn' : `${POSITIONS[nextPlayer]} to play`,
         }
-        
-        if (nextPlayer !== 0) {
-          timeoutRef.current = setTimeout(() => aiTakeTurn(), 800)
-        }
-        return newState
       }
     })
-  }, [aiTakeTurn])
+  }
   
-  // Initial deal on mount
-  useEffect(() => {
-    if (needsInitialDeal) {
-      setNeedsInitialDeal(false)
-      // Small delay before initial deal
-      timeoutRef.current = setTimeout(() => {
-        dealHand()
-      }, 100)
+  const startNewHand = () => {
+    const nextDealer = (game.dealer + 1) % 4
+    const deck = shuffle(createDeck())
+    const hands = [[], [], [], []]
+    
+    let idx = 0
+    for (let round = 0; round < 2; round++) {
+      for (let player = 0; player < 4; player++) {
+        const dealTo = (nextDealer + 1 + player) % 4
+        const count = round === 0 ? (player < 2 ? 3 : 2) : (player < 2 ? 2 : 3)
+        hands[dealTo].push(...deck.slice(idx, idx + count))
+        idx += count
+      }
     }
-  }, [needsInitialDeal, dealHand])
+    
+    const upCard = deck[idx]
+    const firstBidder = (nextDealer + 1) % 4
+    
+    setGame({
+      ...initGame(),
+      dealer: nextDealer,
+      scores: game.scores,
+      handNumber: game.handNumber + 1,
+      phase: 'bidRound1',
+      hands,
+      upCard,
+      currentPlayer: firstBidder,
+      message: `${POSITIONS[firstBidder]} to bid`,
+    })
+  }
   
-  const myTeam = 0 // N/S
-  const theirTeam = 1 // E/W
+  const myTeam = 0
+  const theirTeam = 1
   
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-5xl mx-auto">
-      {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">♠ Euchre ♥</h2>
         <p className="text-sm opacity-70">
@@ -833,7 +636,6 @@ export default function EuchreBoard() {
         </p>
       </div>
       
-      {/* Score Display */}
       <div className="flex gap-8 items-center">
         <div className="text-center">
           <div className="text-3xl font-bold text-blue-500">{game.scores[myTeam]}</div>
@@ -848,7 +650,6 @@ export default function EuchreBoard() {
         </div>
       </div>
       
-      {/* Game Info */}
       <div className="flex gap-6 text-sm">
         {game.trump && (
           <div>
@@ -870,12 +671,10 @@ export default function EuchreBoard() {
         </div>
       </div>
       
-      {/* Message */}
       <div className="text-center font-medium text-lg" style={{ minHeight: '1.75rem' }}>
         {game.message}
       </div>
       
-      {/* Up Card (during bidding) */}
       {(game.phase === 'bidRound1' || game.phase === 'bidRound2') && game.upCard && (
         <div className="flex flex-col items-center gap-2">
           <div className="text-xs uppercase opacity-60">Up Card</div>
@@ -883,7 +682,6 @@ export default function EuchreBoard() {
         </div>
       )}
       
-      {/* Current Trick */}
       {game.phase === 'play' && game.currentTrick.length > 0 && (
         <div className="flex gap-4 items-center">
           {game.currentTrick.map((t, i) => (
@@ -895,7 +693,6 @@ export default function EuchreBoard() {
         </div>
       )}
       
-      {/* Player Hand */}
       {game.hands[0].length > 0 && (
         <div className="flex flex-col items-center gap-3">
           <div className="text-sm uppercase opacity-60">Your Hand</div>
@@ -929,7 +726,6 @@ export default function EuchreBoard() {
         </div>
       )}
       
-      {/* Bidding Controls */}
       {(game.phase === 'bidRound1' || game.phase === 'bidRound2') && game.currentPlayer === 0 && (
         <div className="flex gap-3 flex-wrap justify-center">
           {game.phase === 'bidRound1' && (
@@ -973,7 +769,6 @@ export default function EuchreBoard() {
         </div>
       )}
       
-      {/* Hand End / Game End */}
       {(game.phase === 'handEnd' || game.phase === 'gameEnd') && (
         <div className="flex flex-col items-center gap-4 p-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
           {game.phase === 'gameEnd' ? (
@@ -985,10 +780,7 @@ export default function EuchreBoard() {
                 Final Score: N/S {game.scores[0]} – {game.scores[1]} E/W
               </div>
               <button
-                onClick={() => {
-                  setGame(initGame())
-                  setNeedsInitialDeal(true)
-                }}
+                onClick={() => window.location.reload()}
                 className="btn-primary bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
               >
                 New Game
@@ -1012,8 +804,6 @@ export default function EuchreBoard() {
     </div>
   )
 }
-
-// ── Card Component ───────────────────────────────────────────────────────────
 
 function Card({ card, faceUp = true }) {
   if (!faceUp) {
