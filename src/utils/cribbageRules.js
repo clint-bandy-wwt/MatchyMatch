@@ -50,7 +50,7 @@ function getCardPeggingValue(card) {
  * @param {Array} playedCards - Cards played this round (optional, for future extensions)
  * @returns {boolean} - True if card can be played
  */
-export function validatePeggingPlay(card, currentCount, playedCards = []) {
+export function validatePeggingPlay(card, currentCount) {
   if (!card) return false;
   
   const cardValue = getCardPeggingValue(card);
@@ -127,7 +127,7 @@ export function shouldResetCount(playedCardsThisRound, currentCount) {
  * @returns {string} - 'player' or 'ai' (who plays next)
  */
 export function determineNextPlayer(currentPlayer, situation) {
-  const { canCurrentPlay, canOpponentPlay, count, phase } = situation;
+  const { canCurrentPlay, canOpponentPlay, phase } = situation;
   
   // During pegging phase
   if (phase === 'pegging') {
@@ -159,7 +159,7 @@ export function determineNextPlayer(currentPlayer, situation) {
  * @param {Array} playedCards - Cards already played in pegging
  * @returns {boolean} - True if this is the last card
  */
-export function isLastCard(playerHand, aiHand, playedCards) {
+export function isLastCard(playerHand, aiHand) {
   // Last card is when only 1 card remains between both hands
   const totalRemainingCards = (playerHand?.length || 0) + (aiHand?.length || 0);
   return totalRemainingCards === 1;
