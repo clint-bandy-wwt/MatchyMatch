@@ -1,4 +1,18 @@
+// jest.setup.js
 import '@testing-library/jest-dom';
+import React from 'react';
+
+// React 19 removed React.act and changed how act works internally.
+// Provide a minimal polyfill that satisfies @testing-library/react's checks.
+if (!React.act) {
+  React.act = async (callback) => {
+    const result = callback();
+    if (result && typeof result.then === 'function') {
+      await result;
+    }
+    return result;
+  };
+}
 
 // jsdom doesn't implement matchMedia; useDarkMode reads it for the initial
 // OS-preference fallback when localStorage has no stored value yet.
