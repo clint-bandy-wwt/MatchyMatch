@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react'
 
 // ── Card & Deck Setup ────────────────────────────────────────────────────────
-const SUITS = ['♠', '♣', '♥', '♦']
+export const SUITS = ['♠', '♣', '♥', '♦']
 const RANKS = ['9', '10', 'J', 'Q', 'K', 'A']
 const POSITIONS = ['South', 'West', 'North', 'East']
 
@@ -30,7 +30,7 @@ function shuffleDeck(deck) {
 
 // ── Euchre Logic ─────────────────────────────────────────────────────────────
 
-function getEffectiveRankSuit(card, trump) {
+export function getEffectiveRankSuit(card, trump) {
   if (!trump) return { rank: card.rank, suit: card.suit }
   
   // Right bower (J of trump suit)
@@ -80,7 +80,7 @@ function cardValue(card, trump, ledSuit) {
   return 0
 }
 
-function whoWinsTrick(trick, trump) {
+export function whoWinsTrick(trick, trump) {
   if (trick.length === 0) return null
   
   const ledSuit = getEffectiveRankSuit(trick[0].card, trump).suit
@@ -116,7 +116,7 @@ function canPlayCard(card, hand, ledSuit, trump) {
 
 // ── AI Logic ─────────────────────────────────────────────────────────────────
 
-function aiShouldOrderUp(hand, upCard, position, dealer) {
+export function aiShouldOrderUp(hand, upCard, position, dealer) {
   const suit = upCard.suit
   const trumpCards = hand.filter(c => {
     const eff = getEffectiveRankSuit(c, suit)
@@ -129,15 +129,23 @@ function aiShouldOrderUp(hand, upCard, position, dealer) {
     return eff.rank === 'RB' || eff.rank === 'LB' || c.rank === 'A' || c.rank === 'K'
   })
   
-  // Order up if we have 2+ strong trump or 3+ trump total
-  if (strongTrump.length >= 2 || trumpCards.length >= 3) {
-    return position === dealer ? 'orderUp' : 'orderUp'
+  // Dealer is more aggressive since they get to swap a card
+  if (position === dealer) {
+    // Dealer orders up with 1+ strong trump or 2+ trump total
+    if (strongTrump.length >= 1 || trumpCards.length >= 2) {
+      return 'orderUp'
+    }
+  } else {
+    // Non-dealer needs a stronger hand: 2+ strong trump or 3+ trump total
+    if (strongTrump.length >= 2 || trumpCards.length >= 3) {
+      return 'orderUp'
+    }
   }
   
   return 'pass'
 }
 
-function aiShouldCallTrump(hand, upCardSuit) {
+export function aiShouldCallTrump(hand, upCardSuit) {
   // Try each suit except the up card suit
   const suits = SUITS.filter(s => s !== upCardSuit)
   
@@ -161,7 +169,7 @@ function aiShouldCallTrump(hand, upCardSuit) {
   return null
 }
 
-function aiMustCallTrump(hand, upCardSuit) {
+export function aiMustCallTrump(hand, upCardSuit) {
   // Dealer is stuck - must call trump. Pick the best available suit.
   const suits = SUITS.filter(s => s !== upCardSuit)
   
@@ -269,7 +277,9 @@ function initGame() {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function EuchreBoard() {
+export default function EuchreBoard({ initialDeck = null } = {}) {
+  // initialDeck allows tests to inject a deterministic deck
+  
   const [state, setState] = useState(initGame)
   
   // Helper function - defined before use
@@ -280,7 +290,7 @@ export default function EuchreBoard() {
   // Deal cards
   useEffect(() => {
     if (state.phase === 'deal') {
-      const deck = shuffleDeck(createDeck())
+      const deck = initialDeck || shuffleDeck(createDeck())
       const hands = { South: [], West: [], North: [], East: [] }
       
       // Deal 5 cards to each player (2-3-2 or 3-2-3 pattern)
