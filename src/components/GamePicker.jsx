@@ -263,6 +263,13 @@ const GAMES = [
     builder: 'Clint',
     isNew: true,
   },
+  {
+    id: 'cribbage',
+    name: 'Cribbage',
+    description: 'Classic card game - peg to 121 points against AI',
+    tag: 'Card',
+    isNew: true,
+  },
 ]
 
 
