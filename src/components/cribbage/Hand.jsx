@@ -34,7 +34,7 @@ export default function Hand({
       {cards.length === 0 ? (
         <div className="text-sm text-gray-500 italic">No cards</div>
       ) : (
-        <div className="flex flex-wrap justify-center gap-2 md:gap-1 md:-space-x-6">
+        <div className="flex flex-wrap justify-center gap-2">
           {cards.map((card, index) => (
             <div
               key={`${card.id}-${index}`}
