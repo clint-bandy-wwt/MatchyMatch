@@ -1,4 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
+import { 
+  isLeftBower, 
+  isRightBower, 
+  getEffectiveSuit, 
+  getCardValue, 
+  cardKey, 
+  canPlayCard, 
+  getWinningCard 
+} from './euchreGameLogic'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -30,46 +39,6 @@ function shuffle(arr) {
     ;[copy[i], copy[j]] = [copy[j], copy[i]]
   }
   return copy
-}
-
-function getOpposite(suit) {
-  if (suit === '♠') return '♣'
-  if (suit === '♣') return '♠'
-  if (suit === '♥') return '♦'
-  return '♥'
-}
-
-export function isLeftBower(card, trump) {
-  return card.rank === 'J' && card.suit === getOpposite(trump)
-}
-
-export function isRightBower(card, trump) {
-  return card.rank === 'J' && card.suit === trump
-}
-
-export function getEffectiveSuit(card, trump) {
-  // Left bower counts as trump suit
-  if (isLeftBower(card, trump)) return trump
-  return card.suit
-}
-
-export function getCardValue(card, trump) {
-  // Higher value = stronger card
-  const effSuit = getEffectiveSuit(card, trump)
-  if (effSuit !== trump) {
-    // Non-trump: A=6, K=5, Q=4, J=3, 10=2, 9=1
-    const vals = { A: 6, K: 5, Q: 4, J: 3, '10': 2, '9': 1 }
-    return vals[card.rank] || 0
-  }
-  // Trump suit: Right bower=9, Left bower=8, A=7, K=6, Q=5, (J=4 for non-bower), 10=3, 9=2
-  if (isRightBower(card, trump)) return 9
-  if (isLeftBower(card, trump)) return 8
-  const vals = { A: 7, K: 6, Q: 5, J: 4, '10': 3, '9': 2 }
-  return vals[card.rank] || 0
-}
-
-export function cardKey(card) {
-  return `${card.rank}${card.suit}`
 }
 
 // ── AI Logic ─────────────────────────────────────────────────────────────────
@@ -157,54 +126,6 @@ function aiPlayCard(hand, trick, trump, leadSuit) {
   return playable.reduce((best, card) =>
     getCardValue(card, trump) < getCardValue(best, trump) ? card : best
   )
-}
-
-export function canPlayCard(card, hand, trump, leadSuit) {
-  if (!leadSuit) return true
-  
-  const effSuit = getEffectiveSuit(card, trump)
-  if (effSuit === leadSuit) return true
-  
-  const hasSuit = hand.some(c => getEffectiveSuit(c, trump) === leadSuit)
-  return !hasSuit
-}
-
-export function getWinningCard(trick, trump, leadSuit) {
-  if (trick.length === 0) return null
-  
-  let winner = trick[0].card
-  let winnerValue = getCardValue(winner, trump)
-  let winnerSuit = getEffectiveSuit(winner, trump)
-  
-  for (let i = 1; i < trick.length; i++) {
-    const card = trick[i].card
-    const suit = getEffectiveSuit(card, trump)
-    const value = getCardValue(card, trump)
-    
-    if (suit === trump && winnerSuit !== trump) {
-      winner = card
-      winnerValue = value
-      winnerSuit = suit
-    } else if (suit === trump && winnerSuit === trump) {
-      if (value > winnerValue) {
-        winner = card
-        winnerValue = value
-        winnerSuit = suit
-      }
-    } else if (winnerSuit !== trump && suit === leadSuit && winnerSuit !== leadSuit) {
-      winner = card
-      winnerValue = value
-      winnerSuit = suit
-    } else if (suit === leadSuit && winnerSuit === leadSuit) {
-      if (value > winnerValue) {
-        winner = card
-        winnerValue = value
-        winnerSuit = suit
-      }
-    }
-  }
-  
-  return winner
 }
 
 function initGame() {
@@ -447,7 +368,7 @@ export default function EuchreBoard() {
     }
   }, [game.currentPlayer, game.phase, game.currentTrick.length, processAITurn])
   
-  const handleBid = (action, suit = null, alone = false) => {
+  const handleBid = (action, suit = null) => {
     setGame(g => {
       if (g.currentPlayer !== 0) return g
       

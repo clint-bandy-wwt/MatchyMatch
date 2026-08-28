@@ -7,7 +7,7 @@ import {
   getWinningCard,
   canPlayCard,
   cardKey
-} from '../components/euchre/EuchreBoard'
+} from '../components/euchre/euchreGameLogic'
 
 describe('Euchre Game Logic', () => {
   // Test data
