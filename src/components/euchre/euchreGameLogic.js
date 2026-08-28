@@ -82,3 +82,32 @@ export function getWinningCard(trick, trump, leadSuit) {
   
   return winner
 }
+
+// Calculate points awarded for a completed hand
+// Returns { team: number, points: number } or null if no points awarded
+export function calculateHandScore(makerTeam, tricksWon, goingAlone = false) {
+  const makerTricks = tricksWon[makerTeam]
+  
+  if (makerTricks < 3) {
+    // Euchred: defenders get 2 points
+    const defenderTeam = makerTeam === 0 ? 1 : 0
+    return { team: defenderTeam, points: 2 }
+  }
+  
+  if (makerTricks === 5) {
+    // March: makers get 2 points (4 if alone)
+    return { team: makerTeam, points: goingAlone ? 4 : 2 }
+  }
+  
+  // 3-4 tricks: makers get 1 point
+  return { team: makerTeam, points: 1 }
+}
+
+// Dealer rotation helpers
+export function getNextDealer(currentDealer) {
+  return (currentDealer + 1) % 4
+}
+
+export function getFirstBidder(dealer) {
+  return (dealer + 1) % 4
+}

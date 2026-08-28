@@ -6,7 +6,10 @@ import {
   isRightBower,
   getWinningCard,
   canPlayCard,
-  cardKey
+  cardKey,
+  calculateHandScore,
+  getNextDealer,
+  getFirstBidder
 } from '../components/euchre/euchreGameLogic'
 
 describe('Euchre Game Logic', () => {
@@ -167,72 +170,52 @@ describe('Euchre Game Logic', () => {
   })
   
   describe('Hand Scoring', () => {
-    // These will test the actual scoring logic
-    const PARTNERSHIPS = { 0: [0, 2], 1: [1, 3] }
-    
-    const calculatePoints = (makerTeam, tricksWon, goingAlone) => {
-      const makerTricks = tricksWon[makerTeam]
-      
-      if (makerTricks < 3) {
-        // Euchred: defenders get 2 points
-        return { team: makerTeam === 0 ? 1 : 0, points: 2 }
-      }
-      
-      if (makerTricks === 5) {
-        // March: makers get 2 points (4 if alone)
-        return { team: makerTeam, points: goingAlone ? 4 : 2 }
-      }
-      
-      // 3-4 tricks: makers get 1 point
-      return { team: makerTeam, points: 1 }
-    }
+    // Test the actual scoring logic from euchreGameLogic.js
     
     it('awards 1 point for making 3 tricks', () => {
-      const result = calculatePoints(0, [3, 2], false)
+      const result = calculateHandScore(0, [3, 2], false)
       expect(result).toEqual({ team: 0, points: 1 })
     })
     
     it('awards 1 point for making 4 tricks', () => {
-      const result = calculatePoints(0, [4, 1], false)
+      const result = calculateHandScore(0, [4, 1], false)
       expect(result).toEqual({ team: 0, points: 1 })
     })
     
     it('awards 2 points for march (5 tricks)', () => {
-      const result = calculatePoints(0, [5, 0], false)
+      const result = calculateHandScore(0, [5, 0], false)
       expect(result).toEqual({ team: 0, points: 2 })
     })
     
     it('awards 4 points for march when going alone', () => {
-      const result = calculatePoints(0, [5, 0], true)
+      const result = calculateHandScore(0, [5, 0], true)
       expect(result).toEqual({ team: 0, points: 4 })
     })
     
     it('awards 2 points to defenders when makers are euchred', () => {
-      const result = calculatePoints(0, [2, 3], false)
+      const result = calculateHandScore(0, [2, 3], false)
       expect(result).toEqual({ team: 1, points: 2 })
     })
     
     it('awards 2 points to defenders when makers are euchred (1 trick)', () => {
-      const result = calculatePoints(1, [3, 2], false)
+      const result = calculateHandScore(1, [3, 2], false)
       expect(result).toEqual({ team: 0, points: 2 })
     })
   })
   
   describe('Dealer Rotation', () => {
-    it('rotates dealer clockwise each hand', () => {
-      const dealers = [0, 1, 2, 3, 0, 1] // Should cycle through all positions
-      
-      for (let i = 0; i < dealers.length - 1; i++) {
-        const nextDealer = (dealers[i] + 1) % 4
-        expect(nextDealer).toBe(dealers[i + 1])
-      }
+    it('getNextDealer rotates dealer clockwise', () => {
+      expect(getNextDealer(0)).toBe(1)
+      expect(getNextDealer(1)).toBe(2)
+      expect(getNextDealer(2)).toBe(3)
+      expect(getNextDealer(3)).toBe(0)
     })
     
-    it('first bidder is always left of dealer', () => {
-      for (let dealer = 0; dealer < 4; dealer++) {
-        const firstBidder = (dealer + 1) % 4
-        expect(firstBidder).toBe((dealer + 1) % 4)
-      }
+    it('getFirstBidder returns player left of dealer', () => {
+      expect(getFirstBidder(0)).toBe(1)
+      expect(getFirstBidder(1)).toBe(2)
+      expect(getFirstBidder(2)).toBe(3)
+      expect(getFirstBidder(3)).toBe(0)
     })
   })
 })

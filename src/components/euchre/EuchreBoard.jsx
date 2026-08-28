@@ -6,7 +6,8 @@ import {
   getCardValue, 
   cardKey, 
   canPlayCard, 
-  getWinningCard 
+  getWinningCard,
+  calculateHandScore
 } from './euchreGameLogic'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -137,6 +138,7 @@ function initGame() {
     upCard: null,
     trump: null,
     maker: null,
+    goingAlone: false,
     bidPasses: 0,
     currentTrick: [],
     tricksWon: [0, 0],
@@ -207,7 +209,8 @@ export default function EuchreBoard() {
           bidPasses: 0,
           message: `${POSITIONS[nextPlayer]} to call trump`,
         }
-      } else if (g.phase === 'bidRound2' && newPasses === 3) {
+      } else if (g.phase === 'bidRound2' && newPasses === 3 && g.dealer !== 0) {
+        // Dealer is stuck - AI dealer must call trump
         const finalDec = aiDecideBid(g.hands[g.dealer], g.upCard, g.dealer, g.dealer, 2)
         return {
           ...g,
@@ -216,6 +219,14 @@ export default function EuchreBoard() {
           maker: g.dealer,
           currentPlayer: (g.dealer + 1) % 4,
           message: `${POSITIONS[g.dealer]} called ${SUIT_NAMES[finalDec.suit]}`,
+        }
+      } else if (g.phase === 'bidRound2' && newPasses === 3 && g.dealer === 0) {
+        // Human dealer is stuck - keep them as current player to show buttons
+        return {
+          ...g,
+          currentPlayer: 0,
+          bidPasses: newPasses,
+          message: 'You must call trump (dealer stuck)',
         }
       } else {
         return {
@@ -293,16 +304,9 @@ export default function EuchreBoard() {
       
       if (allPlayed) {
         const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
-        const makerTricks = newTricksWon[makerTeam]
+        const scoreResult = calculateHandScore(makerTeam, newTricksWon, g.goingAlone)
         const newScores = [...g.scores]
-        
-        if (makerTricks >= 3) {
-          const points = makerTricks === 5 ? 2 : 1
-          newScores[makerTeam] += points
-        } else {
-          const otherTeam = makerTeam === 0 ? 1 : 0
-          newScores[otherTeam] += 2
-        }
+        newScores[scoreResult.team] += scoreResult.points
         
         const gameOver = newScores[0] >= 10 || newScores[1] >= 10
         
@@ -368,7 +372,7 @@ export default function EuchreBoard() {
     }
   }, [game.currentPlayer, game.phase, game.currentTrick.length, processAITurn])
   
-  const handleBid = (action, suit = null) => {
+  const handleBid = (action, suit = null, alone = false) => {
     setGame(g => {
       if (g.currentPlayer !== 0) return g
       
@@ -411,9 +415,10 @@ export default function EuchreBoard() {
           phase: 'discard',
           trump,
           maker: 0,
+          goingAlone: alone,
           hands: newHands,
           currentPlayer: g.dealer,
-          message: `You ordered up ${SUIT_NAMES[trump]}`,
+          message: `You ordered up ${SUIT_NAMES[trump]}${alone ? ' (going alone)' : ''}`,
         }
       } else if (action === 'callTrump') {
         return {
@@ -421,8 +426,9 @@ export default function EuchreBoard() {
           phase: 'play',
           trump: suit,
           maker: 0,
+          goingAlone: alone,
           currentPlayer: (g.dealer + 1) % 4,
-          message: `You called ${SUIT_NAMES[suit]}`,
+          message: `You called ${SUIT_NAMES[suit]}${alone ? ' (going alone)' : ''}`,
         }
       }
       
@@ -479,16 +485,9 @@ export default function EuchreBoard() {
         
         if (allPlayed) {
           const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
-          const makerTricks = newTricksWon[makerTeam]
+          const scoreResult = calculateHandScore(makerTeam, newTricksWon, g.goingAlone)
           const newScores = [...g.scores]
-          
-          if (makerTricks >= 3) {
-            const points = makerTricks === 5 ? 2 : 1
-            newScores[makerTeam] += points
-          } else {
-            const otherTeam = makerTeam === 0 ? 1 : 0
-            newScores[otherTeam] += 2
-          }
+          newScores[scoreResult.team] += scoreResult.points
           
           const gameOver = newScores[0] >= 10 || newScores[1] >= 10
           
@@ -668,6 +667,12 @@ export default function EuchreBoard() {
                 Order Up {game.upCard && SUIT_NAMES[game.upCard.suit]}
               </button>
               <button
+                onClick={() => handleBid('orderUp', null, true)}
+                className="btn-primary bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded font-bold"
+              >
+                Go Alone!
+              </button>
+              <button
                 onClick={() => handleBid('pass')}
                 className="btn-ghost px-6 py-2 rounded"
               >
@@ -678,14 +683,21 @@ export default function EuchreBoard() {
           {game.phase === 'bidRound2' && (
             <>
               {SUITS.filter(s => s !== game.upCard.suit).map(suit => (
-                <button
-                  key={suit}
-                  onClick={() => handleBid('callTrump', suit)}
-                  className="btn-primary bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                  style={{ color: SUIT_COLORS[suit] === 'red' ? '#fca5a5' : 'white' }}
-                >
-                  Call {SUIT_NAMES[suit]} {suit}
-                </button>
+                <div key={suit} className="flex gap-2">
+                  <button
+                    onClick={() => handleBid('callTrump', suit)}
+                    className="btn-primary bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                    style={{ color: SUIT_COLORS[suit] === 'red' ? '#fca5a5' : 'white' }}
+                  >
+                    Call {SUIT_NAMES[suit]} {suit}
+                  </button>
+                  <button
+                    onClick={() => handleBid('callTrump', suit, true)}
+                    className="btn-primary bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm font-bold"
+                  >
+                    Alone
+                  </button>
+                </div>
               ))}
               {game.currentPlayer !== game.dealer && (
                 <button
