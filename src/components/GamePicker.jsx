@@ -263,6 +263,12 @@ const GAMES = [
     builder: 'Clint',
     isNew: true,
   },
+  {
+    id: 'euchre',
+    name: 'Euchre',
+    description: '4-player trick-taking card game — first to 10 points!',
+    tag: 'Strategy',
+  },
 ]
 
 

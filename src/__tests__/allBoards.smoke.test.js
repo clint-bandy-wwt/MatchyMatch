@@ -43,6 +43,7 @@ import GeoffsGeometryBoard from '../components/geoffsgeometry/GeoffsGeometryBoar
 import GreatWallBoard from '../components/greatwall/GreatWallBoard';
 import SamIAmBoard from '../components/samiam/SamIAmBoard';
 import { puzzles } from '../data/puzzles';
+import EuchreBoard from '../components/euchre/EuchreBoard';
 
 // Boards reachable from App.jsx's game switch, keyed by the same id used in
 // GamePicker's GAMES list / App.jsx's activeGame value.
@@ -85,6 +86,7 @@ const BOARDS = [
   ['geoffsgeometry', () => <GeoffsGeometryBoard />],
   ['greatwall', () => <GreatWallBoard />],
   ['samiam', () => <SamIAmBoard />],
+  ['euchre', () => <EuchreBoard />],
 ];
 
 describe('game board smoke tests', () => {
