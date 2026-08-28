@@ -9,7 +9,8 @@ import {
   getWinningCard,
   calculateHandScore,
   getActivePlayers,
-  getNextActivePlayer
+  getNextActivePlayer,
+  getFirstPlayer
 } from './euchreGameLogic'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -219,7 +220,8 @@ export default function EuchreBoard() {
           phase: 'play',
           trump: finalDec.suit,
           maker: g.dealer,
-          currentPlayer: (g.dealer + 1) % 4,
+          goingAlone: false,  // AI never goes alone
+          currentPlayer: getFirstPlayer(g.dealer, g.dealer, false),
           message: `${POSITIONS[g.dealer]} called ${SUIT_NAMES[finalDec.suit]}`,
         }
       } else if (g.phase === 'bidRound2' && newPasses === 3 && g.dealer === 0) {
@@ -259,7 +261,8 @@ export default function EuchreBoard() {
         phase: 'play',
         trump: decision.suit,
         maker: g.currentPlayer,
-        currentPlayer: (g.dealer + 1) % 4,
+        goingAlone: false,  // AI never goes alone
+        currentPlayer: getFirstPlayer(g.dealer, g.currentPlayer, false),
         message: `${POSITIONS[g.currentPlayer]} called ${SUIT_NAMES[decision.suit]}`,
       }
     }
@@ -276,8 +279,8 @@ export default function EuchreBoard() {
       ...g,
       phase: 'play',
       hands: newHands,
-      currentPlayer: (g.dealer + 1) % 4,
-      message: `${POSITIONS[(g.dealer + 1) % 4]} leads`,
+      currentPlayer: getFirstPlayer(g.dealer, g.maker, g.goingAlone),
+      message: `${POSITIONS[getFirstPlayer(g.dealer, g.maker, g.goingAlone)]} leads`,
     }
   }
   
@@ -437,7 +440,7 @@ export default function EuchreBoard() {
           trump: suit,
           maker: 0,
           goingAlone: alone,
-          currentPlayer: (g.dealer + 1) % 4,
+          currentPlayer: getFirstPlayer(g.dealer, 0, alone),
           message: `You called ${SUIT_NAMES[suit]}${alone ? ' (going alone)' : ''}`,
         }
       }
@@ -458,8 +461,8 @@ export default function EuchreBoard() {
         ...g,
         phase: 'play',
         hands: newHands,
-        currentPlayer: (g.dealer + 1) % 4,
-        message: `${POSITIONS[(g.dealer + 1) % 4]} leads`,
+        currentPlayer: getFirstPlayer(g.dealer, g.maker, g.goingAlone),
+        message: `${POSITIONS[getFirstPlayer(g.dealer, g.maker, g.goingAlone)]} leads`,
       }
     })
   }

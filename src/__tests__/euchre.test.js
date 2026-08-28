@@ -11,7 +11,8 @@ import {
   getNextDealer,
   getFirstBidder,
   getActivePlayers,
-  getNextActivePlayer
+  getNextActivePlayer,
+  getFirstPlayer
 } from '../components/euchre/euchreGameLogic'
 
 describe('Euchre Game Logic', () => {
@@ -248,6 +249,22 @@ describe('Euchre Game Logic', () => {
       expect(getNextActivePlayer(0, 1, true)).toBe(1)
       expect(getNextActivePlayer(1, 1, true)).toBe(2)
       expect(getNextActivePlayer(2, 1, true)).toBe(0)
+    })
+    
+    it('getFirstPlayer returns left of dealer when not going alone', () => {
+      expect(getFirstPlayer(0, 0, false)).toBe(1)
+      expect(getFirstPlayer(1, 1, false)).toBe(2)
+      expect(getFirstPlayer(2, 2, false)).toBe(3)
+      expect(getFirstPlayer(3, 3, false)).toBe(0)
+    })
+    
+    it('getFirstPlayer skips sitting partner when going alone', () => {
+      // Maker 0, dealer 1: partner 2 sits out, first player should be 3 not 2
+      expect(getFirstPlayer(1, 0, true)).toBe(3)
+      // Maker 1, dealer 2: partner 3 sits out, first player should be 0 not 3
+      expect(getFirstPlayer(2, 1, true)).toBe(0)
+      // Maker 2, dealer 3: partner 0 sits out, first player should be 1 not 0
+      expect(getFirstPlayer(3, 2, true)).toBe(1)
     })
   })
 })

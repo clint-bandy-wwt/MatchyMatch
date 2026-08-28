@@ -129,3 +129,21 @@ export function getNextActivePlayer(current, maker, goingAlone) {
   const currentIndex = activePlayers.indexOf(current)
   return activePlayers[(currentIndex + 1) % activePlayers.length]
 }
+
+// Get the first player of a hand (left of dealer), skipping if they're sitting out
+export function getFirstPlayer(dealer, maker, goingAlone) {
+  if (!goingAlone) {
+    return (dealer + 1) % 4
+  }
+  
+  const firstCandidate = (dealer + 1) % 4
+  const activePlayers = getActivePlayers(maker, goingAlone)
+  
+  if (activePlayers.includes(firstCandidate)) {
+    return firstCandidate
+  }
+  
+  // First candidate is sitting out, find next active player in order
+  const idx = activePlayers.findIndex(p => p > firstCandidate)
+  return idx >= 0 ? activePlayers[idx] : activePlayers[0]
+}
