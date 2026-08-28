@@ -1,3 +1,4 @@
+// eslint.config.js
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -29,7 +30,10 @@ export default defineConfig([
   {
     files: ['**/__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}', 'jest.setup.js'],
     languageOptions: {
-      globals: globals.jest,
+      globals: {
+        ...globals.jest,
+        ...globals.node,
+      },
     },
   },
 ])

@@ -1,4 +1,22 @@
+// jest.setup.js
 import '@testing-library/jest-dom';
+
+// React 19 removed React.act. We need to polyfill it before any modules import React.
+const React = require('react');
+
+// Create a simple act implementation
+const actImpl = (callback) => {
+  const result = callback();
+  if (result && typeof result.then === 'function') {
+    return result.then(() => undefined);
+  }
+  return undefined;
+};
+
+// Add act to React if it doesn't exist
+if (!React.act) {
+  React.act = actImpl;
+}
 
 // jsdom doesn't implement matchMedia; useDarkMode reads it for the initial
 // OS-preference fallback when localStorage has no stored value yet.
