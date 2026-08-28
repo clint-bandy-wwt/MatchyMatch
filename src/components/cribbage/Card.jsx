@@ -28,23 +28,23 @@ export default function Card({
 }) {
   // Size classes
   const sizeClasses = {
-    small: 'w-12 h-16 text-xs',
-    medium: 'w-16 h-24 text-sm',
-    large: 'w-20 h-28 text-base',
+    small: 'w-14 h-20 text-xs',
+    medium: 'w-20 h-28 text-sm',
+    large: 'w-24 h-32 text-base',
   }
 
   // Rank font sizes
   const rankSizes = {
-    small: 'text-base',
-    medium: 'text-xl',
-    large: 'text-2xl',
+    small: 'text-sm font-bold',
+    medium: 'text-lg font-bold',
+    large: 'text-xl font-bold',
   }
 
   // Suit font sizes
   const suitSizes = {
-    small: 'text-2xl',
-    medium: 'text-4xl',
-    large: 'text-5xl',
+    small: 'text-xl',
+    medium: 'text-2xl',
+    large: 'text-3xl',
   }
 
   if (!card) {
@@ -90,7 +90,7 @@ export default function Card({
         // Card front
         <>
           {/* Top rank and suit */}
-          <div className="flex flex-col items-center pt-1">
+          <div className="flex flex-col items-center pt-0.5 leading-tight">
             <div className={clsx('font-bold leading-none', rankSizes[size])} style={{ color: suitColor }}>
               {card.rank}
             </div>
@@ -100,12 +100,12 @@ export default function Card({
           </div>
 
           {/* Center suit symbol */}
-          <div className={clsx('leading-none', suitSizes[size])} style={{ color: suitColor }}>
+          <div className={clsx('leading-none my-auto', suitSizes[size])} style={{ color: suitColor }}>
             {suitSymbol}
           </div>
 
           {/* Bottom rank and suit (upside down) */}
-          <div className="flex flex-col items-center pb-1 rotate-180">
+          <div className="flex flex-col items-center pb-0.5 rotate-180 leading-tight">
             <div className={clsx('font-bold leading-none', rankSizes[size])} style={{ color: suitColor }}>
               {card.rank}
             </div>
