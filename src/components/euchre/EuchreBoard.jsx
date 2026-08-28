@@ -39,21 +39,21 @@ function getOpposite(suit) {
   return '♥'
 }
 
-function isLeftBower(card, trump) {
+export function isLeftBower(card, trump) {
   return card.rank === 'J' && card.suit === getOpposite(trump)
 }
 
-function isRightBower(card, trump) {
+export function isRightBower(card, trump) {
   return card.rank === 'J' && card.suit === trump
 }
 
-function getEffectiveSuit(card, trump) {
+export function getEffectiveSuit(card, trump) {
   // Left bower counts as trump suit
   if (isLeftBower(card, trump)) return trump
   return card.suit
 }
 
-function getCardValue(card, trump) {
+export function getCardValue(card, trump) {
   // Higher value = stronger card
   const effSuit = getEffectiveSuit(card, trump)
   if (effSuit !== trump) {
@@ -68,7 +68,7 @@ function getCardValue(card, trump) {
   return vals[card.rank] || 0
 }
 
-function cardKey(card) {
+export function cardKey(card) {
   return `${card.rank}${card.suit}`
 }
 
@@ -159,7 +159,7 @@ function aiPlayCard(hand, trick, trump, leadSuit) {
   )
 }
 
-function canPlayCard(card, hand, trump, leadSuit) {
+export function canPlayCard(card, hand, trump, leadSuit) {
   if (!leadSuit) return true
   
   const effSuit = getEffectiveSuit(card, trump)
@@ -169,7 +169,7 @@ function canPlayCard(card, hand, trump, leadSuit) {
   return !hasSuit
 }
 
-function getWinningCard(trick, trump, leadSuit) {
+export function getWinningCard(trick, trump, leadSuit) {
   if (trick.length === 0) return null
   
   let winner = trick[0].card
@@ -306,8 +306,9 @@ export default function EuchreBoard() {
       }
     } else if (decision.action === 'orderUp') {
       const trump = g.upCard.suit
-      const newHands = [...g.hands]
-      newHands[g.dealer].push(g.upCard)
+      const newHands = g.hands.map((hand, i) => 
+        i === g.dealer ? [...hand, g.upCard] : hand
+      )
       
       return {
         ...g,
@@ -446,7 +447,7 @@ export default function EuchreBoard() {
     }
   }, [game.currentPlayer, game.phase, game.currentTrick.length, processAITurn])
   
-  const handleBid = (action, suit = null) => {
+  const handleBid = (action, suit = null, alone = false) => {
     setGame(g => {
       if (g.currentPlayer !== 0) return g
       
@@ -462,6 +463,14 @@ export default function EuchreBoard() {
             bidPasses: 0,
             message: `${POSITIONS[nextPlayer]} to call trump`,
           }
+        } else if (g.phase === 'bidRound2' && newPasses === 3 && g.dealer === 0) {
+          // Human is dealer and stuck - keep them as current player to show buttons
+          return {
+            ...g,
+            currentPlayer: 0,
+            bidPasses: newPasses,
+            message: 'You must call trump (dealer stuck)',
+          }
         } else {
           return {
             ...g,
@@ -472,8 +481,9 @@ export default function EuchreBoard() {
         }
       } else if (action === 'orderUp') {
         const trump = g.upCard.suit
-        const newHands = [...g.hands]
-        newHands[g.dealer].push(g.upCard)
+        const newHands = g.hands.map((hand, i) => 
+          i === g.dealer ? [...hand, g.upCard] : hand
+        )
         
         return {
           ...g,
