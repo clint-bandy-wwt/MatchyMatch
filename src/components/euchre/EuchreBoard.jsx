@@ -147,7 +147,7 @@ function aiChooseCard(hand, leadSuit, trump, trickSoFar) {
     West: 'East', East: 'West' 
   }
   
-  const myPosition = POSITIONS.find(p => hand === hand) // This is placeholder; actual position tracked in state
+  const myPosition = POSITIONS.find(() => hand === hand) // This is placeholder; actual position tracked in state
   const myPartner = partnerPositions[myPosition] || partnerPositions['West']
   
   if (currentWinner === myPartner) {
@@ -237,7 +237,6 @@ export default function EuchreBoard() {
   const [maker, setMaker] = useState(null)
   const [goingAlone, setGoingAlone] = useState(null)
   const [message, setMessage] = useState('')
-  const [selectedCard, setSelectedCard] = useState(null)
   const [dealerDiscarding, setDealerDiscarding] = useState(false)
   
   const startNewHand = useCallback(() => {
@@ -255,7 +254,6 @@ export default function EuchreBoard() {
     setMaker(null)
     setGoingAlone(null)
     setDealerDiscarding(false)
-    setSelectedCard(null)
     setMessage('')
     
     // Rotate dealer
@@ -276,6 +274,43 @@ export default function EuchreBoard() {
     setDealer('West')
     startNewHand()
   }
+  
+  // Helper for stick-the-dealer auto-call
+  const autoCallTrump = useCallback(() => {
+    const availableSuits = SUITS.filter(s => s !== upCard.suit)
+    const bestSuit = availableSuits[Math.floor(Math.random() * availableSuits.length)]
+    
+    // Schedule the call for next tick to avoid recursion
+    setTimeout(() => {
+      setTrump(bestSuit)
+      setMaker(currentPlayer)
+      setGoingAlone(false)
+      setMessage(`${currentPlayer} called ${SUIT_NAMES[bestSuit]} trump!`)
+      
+      // Start playing, first player is left of dealer
+      const dealerIdx = POSITIONS.indexOf(dealer)
+      const firstPlayer = POSITIONS[(dealerIdx + 1) % 4]
+      setCurrentPlayer(firstPlayer)
+      setGameState('playing')
+    }, 0)
+  }, [upCard, currentPlayer, dealer])
+  
+  // Handle stick-the-dealer separately to avoid recursion
+  useEffect(() => {
+    if (gameState !== 'bidding' || dealerDiscarding) return
+    if (biddingRound !== 2 || currentPlayer !== dealer) return
+    
+    // Check if we need to auto-call for dealer
+    const allPassed = bidHistory.filter(b => b.action === 'pass').length >= 7
+    
+    if (allPassed && currentPlayer === 'South') {
+      // Let human dealer make the choice
+      return
+    } else if (allPassed && currentPlayer !== 'South') {
+      // AI dealer must call
+      autoCallTrump()
+    }
+  }, [gameState, biddingRound, currentPlayer, dealer, bidHistory, dealerDiscarding, autoCallTrump])
   
   // Handle bidding
   const handleBid = useCallback((action, suit = null, alone = false) => {
@@ -330,13 +365,7 @@ export default function EuchreBoard() {
       }
     } else {
       // Round 2
-      if (currentPlayer === dealer) {
-        // Dealer must call (stick the dealer)
-        // Auto-pick best suit for dealer
-        const availableSuits = SUITS.filter(s => s !== upCard.suit)
-        const bestSuit = availableSuits[Math.floor(Math.random() * availableSuits.length)]
-        handleBid('call', bestSuit, false)
-      } else {
+      if (currentPlayer !== dealer) {
         const nextIdx = (currentIdx + 1) % 4
         setCurrentPlayer(POSITIONS[nextIdx])
       }
@@ -378,11 +407,11 @@ export default function EuchreBoard() {
   }
   
   // Handle card play
-  const handleCardPlay = (card) => {
+  const handleCardPlay = useCallback((card) => {
     const hand = hands[currentPlayer]
     const leadSuit = trick.length > 0 ? getEffectiveSuit(trick[0].card, trump) : null
     
-    if (!canPlayCard(card, hand, leadSuit, trump)) {
+    if (leadSuit && !canPlayCard(card, hand, leadSuit, trump)) {
       setMessage('Must follow suit!')
       setTimeout(() => setMessage(''), 1500)
       return
@@ -394,7 +423,6 @@ export default function EuchreBoard() {
     const newHands = { ...hands }
     newHands[currentPlayer] = newHands[currentPlayer].filter(c => !(c.rank === card.rank && c.suit === card.suit))
     setHands(newHands)
-    setSelectedCard(null)
     
     if (newTrick.length === 4) {
       // Trick complete
@@ -418,7 +446,6 @@ export default function EuchreBoard() {
           const defenderTeam = makerTeam === 'NS' ? 'EW' : 'NS'
           
           const makerTricks = tricksWon[makerTeam] + (team === makerTeam ? 1 : 0)
-          const defenderTricks = 5 - makerTricks
           
           let points = 0
           let scoringTeam = makerTeam
@@ -473,11 +500,11 @@ export default function EuchreBoard() {
       
       setCurrentPlayer(nextPlayer)
     }
-  }
+  }, [currentPlayer, hands, trick, trump, tricksWon, maker, goingAlone, scores, startNewHand])
   
   // AI card play
   useEffect(() => {
-    if (gameState !== 'playing' || currentPlayer === 'South') return
+    if (gameState !== 'playing' || currentPlayer === 'South' || dealerDiscarding) return
     
     const timer = setTimeout(() => {
       const hand = hands[currentPlayer]
@@ -487,7 +514,7 @@ export default function EuchreBoard() {
     }, 1000)
     
     return () => clearTimeout(timer)
-  }, [gameState, currentPlayer, hands, trick, trump])
+  }, [gameState, currentPlayer, hands, trick, trump, dealerDiscarding, handleCardPlay])
   
   // Render helpers
   const renderCard = (card, onClick = null, disabled = false, small = false) => {
@@ -506,8 +533,6 @@ export default function EuchreBoard() {
       </button>
     )
   }
-  
-  const getTeamName = (team) => team === 'NS' ? 'North-South' : 'East-West'
   
   const canPlayCardFromHand = (card) => {
     if (gameState !== 'playing' || currentPlayer !== 'South') return false
