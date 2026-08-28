@@ -106,7 +106,7 @@ function canPlayCard(card, hand, ledSuit, trumpSuit) {
 
 // ── AI Logic ─────────────────────────────────────────────────────────────────
 
-function aiShouldOrderUp(hand, upcard, position, dealer) {
+function aiShouldOrderUp(hand, upcard) {
   const trumpSuit = upcard.suit
   let trumpCount = 0
   let bowers = 0
@@ -304,7 +304,7 @@ export default function EuchreBoard() {
         [dealerPlayer]: [...prev.hands[dealerPlayer], prev.upcard],
       },
     }))
-  }, [state.phase, state.biddingRound, state.turn, state.dealer, state.upcard])
+  }, [state.phase, state.biddingRound, state.dealer])
 
   const passBid = useCallback(() => {
     if (state.phase !== 'bidding') return
@@ -364,7 +364,7 @@ export default function EuchreBoard() {
       message: `${PLAYERS[prev.turn]} called ${SUIT_NAMES[suit]}. ${PLAYERS[(prev.dealer + 1) % 4]} leads.`,
       bidHistory: [...prev.bidHistory, { player: PLAYERS[prev.turn], action: `call-${suit}` }],
     }))
-  }, [state.phase, state.biddingRound, state.turn, state.dealer, state.upcard])
+  }, [state.phase, state.biddingRound, state.upcard])
 
   // ── Dealer Discard ───────────────────────────────────────────────────────────
   
