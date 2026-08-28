@@ -111,3 +111,21 @@ export function getNextDealer(currentDealer) {
 export function getFirstBidder(dealer) {
   return (dealer + 1) % 4
 }
+
+// Get list of players who are active (not sitting out)
+// When going alone, maker's partner sits out
+export function getActivePlayers(maker, goingAlone) {
+  if (!goingAlone) {
+    return [0, 1, 2, 3]
+  }
+  
+  const partner = (maker + 2) % 4
+  return [0, 1, 2, 3].filter(p => p !== partner)
+}
+
+// Get next active player in turn order, skipping partner if going alone
+export function getNextActivePlayer(current, maker, goingAlone) {
+  const activePlayers = getActivePlayers(maker, goingAlone)
+  const currentIndex = activePlayers.indexOf(current)
+  return activePlayers[(currentIndex + 1) % activePlayers.length]
+}

@@ -7,7 +7,9 @@ import {
   cardKey, 
   canPlayCard, 
   getWinningCard,
-  calculateHandScore
+  calculateHandScore,
+  getActivePlayers,
+  getNextActivePlayer
 } from './euchreGameLogic'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -290,8 +292,10 @@ export default function EuchreBoard() {
     newHands[g.currentPlayer] = newHand
     
     const newTrick = [...g.currentTrick, { player: g.currentPlayer, card }]
+    const expectedTrickSize = g.goingAlone ? 3 : 4
     
-    if (newTrick.length === 4) {
+    if (newTrick.length === expectedTrickSize) {
+      // Trick is complete
       const leadSuitFinal = getEffectiveSuit(newTrick[0].card, g.trump)
       const winningCard = getWinningCard(newTrick, g.trump, leadSuitFinal)
       const winner = newTrick.find(t => cardKey(t.card) === cardKey(winningCard)).player
@@ -300,7 +304,9 @@ export default function EuchreBoard() {
       const newTricksWon = [...g.tricksWon]
       newTricksWon[winnerTeam]++
       
-      const allPlayed = newHands.every(h => h.length === 0)
+      // Check if all active players have played all cards
+      const activePlayers = getActivePlayers(g.maker, g.goingAlone)
+      const allPlayed = activePlayers.every(p => newHands[p].length === 0)
       
       if (allPlayed) {
         const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
@@ -317,7 +323,11 @@ export default function EuchreBoard() {
           currentTrick: [],
           tricksWon: newTricksWon,
           scores: newScores,
-          message: `Hand over`,
+          message: `Hand over: ${
+            scoreResult.team === 0 ? 'N/S' : 'E/W'
+          } won ${newTricksWon[scoreResult.team]} tricks and scored ${
+            scoreResult.points
+          } point${scoreResult.points !== 1 ? 's' : ''}`,
         }
       } else {
         return {
@@ -330,7 +340,7 @@ export default function EuchreBoard() {
         }
       }
     } else {
-      const nextPlayer = (g.currentPlayer + 1) % 4
+      const nextPlayer = getNextActivePlayer(g.currentPlayer, g.maker, g.goingAlone)
       return {
         ...g,
         hands: newHands,
@@ -418,7 +428,7 @@ export default function EuchreBoard() {
           goingAlone: alone,
           hands: newHands,
           currentPlayer: g.dealer,
-          message: `You ordered up ${SUIT_NAMES[trump]}${alone ? ' (going alone)' : ''}`,
+          message: g.dealer === 0 ? 'Choose a card to discard' : `You ordered up ${SUIT_NAMES[trump]}${alone ? ' (going alone)' : ''}`,
         }
       } else if (action === 'callTrump') {
         return {
@@ -471,8 +481,10 @@ export default function EuchreBoard() {
       newHands[0] = newHand
       
       const newTrick = [...g.currentTrick, { player: 0, card }]
+      const expectedTrickSize = g.goingAlone ? 3 : 4
       
-      if (newTrick.length === 4) {
+      if (newTrick.length === expectedTrickSize) {
+        // Trick is complete
         const leadSuitFinal = getEffectiveSuit(newTrick[0].card, g.trump)
         const winningCard = getWinningCard(newTrick, g.trump, leadSuitFinal)
         const winner = newTrick.find(t => cardKey(t.card) === cardKey(winningCard)).player
@@ -481,7 +493,9 @@ export default function EuchreBoard() {
         const newTricksWon = [...g.tricksWon]
         newTricksWon[winnerTeam]++
         
-        const allPlayed = newHands.every(h => h.length === 0)
+        // Check if all active players have played all cards
+        const activePlayers = getActivePlayers(g.maker, g.goingAlone)
+        const allPlayed = activePlayers.every(p => newHands[p].length === 0)
         
         if (allPlayed) {
           const makerTeam = PARTNERSHIPS[0].includes(g.maker) ? 0 : 1
@@ -498,7 +512,11 @@ export default function EuchreBoard() {
             currentTrick: [],
             tricksWon: newTricksWon,
             scores: newScores,
-            message: `Hand over`,
+          message: `Hand over: ${
+            scoreResult.team === 0 ? 'N/S' : 'E/W'
+          } won ${newTricksWon[scoreResult.team]} tricks and scored ${
+            scoreResult.points
+          } point${scoreResult.points !== 1 ? 's' : ''}`,
           }
         } else {
           return {
@@ -511,7 +529,7 @@ export default function EuchreBoard() {
           }
         }
       } else {
-        const nextPlayer = (g.currentPlayer + 1) % 4
+        const nextPlayer = getNextActivePlayer(g.currentPlayer, g.maker, g.goingAlone)
         return {
           ...g,
           hands: newHands,

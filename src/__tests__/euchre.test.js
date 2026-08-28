@@ -9,7 +9,9 @@ import {
   cardKey,
   calculateHandScore,
   getNextDealer,
-  getFirstBidder
+  getFirstBidder,
+  getActivePlayers,
+  getNextActivePlayer
 } from '../components/euchre/euchreGameLogic'
 
 describe('Euchre Game Logic', () => {
@@ -216,6 +218,36 @@ describe('Euchre Game Logic', () => {
       expect(getFirstBidder(1)).toBe(2)
       expect(getFirstBidder(2)).toBe(3)
       expect(getFirstBidder(3)).toBe(0)
+    })
+  })
+  
+  describe('Going Alone - Partner Sits Out', () => {
+    it('getActivePlayers returns all 4 when not going alone', () => {
+      expect(getActivePlayers(0, false)).toEqual([0, 1, 2, 3])
+      expect(getActivePlayers(2, false)).toEqual([0, 1, 2, 3])
+    })
+    
+    it('getActivePlayers excludes partner when going alone', () => {
+      // Maker 0 (South), partner is 2 (North)
+      expect(getActivePlayers(0, true)).toEqual([0, 1, 3])
+      // Maker 1 (West), partner is 3 (East)
+      expect(getActivePlayers(1, true)).toEqual([0, 1, 2])
+      // Maker 2 (North), partner is 0 (South)
+      expect(getActivePlayers(2, true)).toEqual([1, 2, 3])
+      // Maker 3 (East), partner is 1 (West)
+      expect(getActivePlayers(3, true)).toEqual([0, 2, 3])
+    })
+    
+    it('getNextActivePlayer skips partner when going alone', () => {
+      // Maker 0, partner 2 sits out: 0 -> 1 -> 3 -> 0
+      expect(getNextActivePlayer(0, 0, true)).toBe(1)
+      expect(getNextActivePlayer(1, 0, true)).toBe(3)
+      expect(getNextActivePlayer(3, 0, true)).toBe(0)
+      
+      // Maker 1, partner 3 sits out: 0 -> 1 -> 2 -> 0
+      expect(getNextActivePlayer(0, 1, true)).toBe(1)
+      expect(getNextActivePlayer(1, 1, true)).toBe(2)
+      expect(getNextActivePlayer(2, 1, true)).toBe(0)
     })
   })
 })
