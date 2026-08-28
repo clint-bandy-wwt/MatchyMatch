@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom';
-import React from 'react';
 
 // jsdom doesn't implement matchMedia; useDarkMode reads it for the initial
 // OS-preference fallback when localStorage has no stored value yet.
@@ -42,19 +41,3 @@ window.ResizeObserver =
     unobserve() {}
     disconnect() {}
   };
-
-// React 19 removed React.act but RTL still expects it - tell RTL we're in a test environment
-// Provide a no-op polyfill for React.act
-if (!React.act) {
-  React.act = async (callback) => {
-    const result = callback();
-    // If it's a promise, await it
-    if (result && typeof result.then === 'function') {
-      await result;
-      return result;
-    }
-    return result;
-  };
-}
-// Tell RTL not to wrap in act since we provide our own
-global.IS_REACT_ACT_ENVIRONMENT = true;
