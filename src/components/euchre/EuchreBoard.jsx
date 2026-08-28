@@ -275,6 +275,7 @@ export default function EuchreBoard() {
         currentPlayer: (state.dealer + 1) % 4,
         message: `${upCard.rank}${upCard.suit} is turned up. ${POSITIONS[(state.dealer + 1) % 4]} to bid.`,
         passCount: 0,
+        waitingForAI: POSITIONS[(state.dealer + 1) % 4] !== 'South',
       })
     }
   }, [state.phase])
@@ -354,7 +355,7 @@ export default function EuchreBoard() {
           setState({
             ...state,
             message: `Dealer must call trump. Choose a suit.`,
-            waitingForAI: false,
+            waitingForAI: POSITIONS[state.dealer] !== 'South',
           })
         } else {
           const nextPlayer = (state.currentPlayer + 1) % 4
