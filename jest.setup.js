@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom';
 
+// React 19 compatibility: polyfill React.act for testing-library
+import React from 'react';
+if (!React.act) {
+  React.act = (callback) => callback();
+}
+
 // jsdom doesn't implement matchMedia; useDarkMode reads it for the initial
 // OS-preference fallback when localStorage has no stored value yet.
 window.matchMedia = window.matchMedia || function matchMedia(query) {
