@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ function cardValue(card, trump) {
   const rankValues = { 9: 1, 10: 2, J: 3, Q: 4, K: 5, A: 6 }
   
   if (card.suit === trump) {
-    if (card.rank === 'J') return 100 // Right bower
+    if (card.rank === 'J') return 100
     if (card.rank === 'A') return 13
     if (card.rank === 'K') return 12
     if (card.rank === 'Q') return 11
@@ -43,7 +43,6 @@ function cardValue(card, trump) {
     if (card.rank === '9') return 9
   }
   
-  // Left bower (other suit same color as trump)
   if (card.rank === 'J' && sameColor(card.suit, trump)) {
     return 99
   }
@@ -276,10 +275,12 @@ function dealHand(state) {
 
 export default function EuchreBoard() {
   const [state, setState] = useState(initGame)
+  const trickCompleteRef = useRef(false)
   
   const humanPos = 0
   
   const handleDeal = useCallback(() => {
+    trickCompleteRef.current = false
     setState(s => dealHand(s))
   }, [])
   
@@ -392,7 +393,6 @@ export default function EuchreBoard() {
       setState(prevState => {
         const pos = prevState.currentPlayer
         
-        // Skip partner if going alone
         if (prevState.alonePlayer !== null) {
           const aloneTeam = prevState.alonePlayer % 2
           const currentTeam = pos % 2
@@ -428,7 +428,6 @@ export default function EuchreBoard() {
             
             return newState
           } else {
-            // Pass
             const nextPlayer = (pos + 1) % 4
             const newHistory = [...prevState.bidHistory, { position: pos, action: 'pass' }]
             
@@ -468,7 +467,6 @@ export default function EuchreBoard() {
               bidHistory: [...prevState.bidHistory, { position: pos, action: alone ? `call-${suit}-alone` : `call-${suit}` }],
             }
           } else {
-            // Pass
             const nextPlayer = (pos + 1) % 4
             const newHistory = [...prevState.bidHistory, { position: pos, action: 'pass' }]
             
@@ -527,6 +525,9 @@ export default function EuchreBoard() {
     const expectedTrickSize = state.alonePlayer !== null ? 3 : 4
     if (state.trick.length < expectedTrickSize) return
     
+    if (trickCompleteRef.current) return
+    trickCompleteRef.current = true
+    
     const winner = trickWinner(state.trick, state.trump)
     const winnerIdx = POSITIONS.indexOf(winner)
     const winnerTeam = winnerIdx % 2
@@ -534,9 +535,19 @@ export default function EuchreBoard() {
     const newTricksWon = [...state.tricksWon]
     newTricksWon[winnerTeam]++
     
-    const allHandsEmpty = state.hands.every(h => h.length === 0)
+    // Check if active players are out of cards
+    const activePlayers = [0, 1, 2, 3].filter(p => {
+      if (state.alonePlayer === null) return true
+      const aloneTeam = state.alonePlayer % 2
+      const pTeam = p % 2
+      return !(aloneTeam === pTeam && p !== state.alonePlayer)
+    })
+    
+    const allHandsEmpty = activePlayers.every(p => state.hands[p].length === 0)
     
     const timer = setTimeout(() => {
+      trickCompleteRef.current = false
+      
       if (allHandsEmpty) {
         const callerTeam = state.caller % 2
         const callerTricks = newTricksWon[callerTeam]
@@ -614,9 +625,10 @@ export default function EuchreBoard() {
     }, 1500)
     
     return () => clearTimeout(timer)
-  }, [state.trick, state.phase, state.trump, state.hands, state.tricksWon, state.caller, state.alonePlayer, state.score])
+  }, [state.trick.length, state.phase, state.alonePlayer, state.caller, state.hands, state.score, state.tricksWon, state.trump])
   
   const handleNextHand = useCallback(() => {
+    trickCompleteRef.current = false
     setState(s => ({
       ...initGame(),
       dealer: (s.dealer + 1) % 4,
@@ -626,10 +638,19 @@ export default function EuchreBoard() {
   }, [])
   
   const handleNewGame = useCallback(() => {
+    trickCompleteRef.current = false
     setState(initGame())
   }, [])
   
   const humanHand = state.hands[humanPos]
+  
+  // Helper to check if a player is sitting out
+  const isSittingOut = (playerIdx) => {
+    if (state.alonePlayer === null) return false
+    const aloneTeam = state.alonePlayer % 2
+    const playerTeam = playerIdx % 2
+    return aloneTeam === playerTeam && playerIdx !== state.alonePlayer
+  }
   
   const renderCard = (card, clickable = false, onClick = null) => {
     const isRed = ['♥', '♦'].includes(card.suit)
@@ -731,17 +752,26 @@ export default function EuchreBoard() {
       <div className="relative w-full h-96 bg-green-700 rounded-2xl border-4 border-green-900 flex items-center justify-center">
         {/* North */}
         <div className="absolute top-4 flex gap-2">
-          {state.hands[2].map((_, idx) => renderCardBack(`north-${idx}`))}
+          {!isSittingOut(2) && state.hands[2].map((_, idx) => renderCardBack(`north-${idx}`))}
+          {isSittingOut(2) && (
+            <div className="text-white text-sm font-semibold opacity-75">Sitting out</div>
+          )}
         </div>
         
         {/* East */}
         <div className="absolute right-4 flex flex-col gap-2">
-          {state.hands[1].map((_, idx) => renderCardBack(`east-${idx}`))}
+          {!isSittingOut(1) && state.hands[1].map((_, idx) => renderCardBack(`east-${idx}`))}
+          {isSittingOut(1) && (
+            <div className="text-white text-sm font-semibold opacity-75">Sitting out</div>
+          )}
         </div>
         
         {/* West */}
         <div className="absolute left-4 flex flex-col gap-2">
-          {state.hands[3].map((_, idx) => renderCardBack(`west-${idx}`))}
+          {!isSittingOut(3) && state.hands[3].map((_, idx) => renderCardBack(`west-${idx}`))}
+          {isSittingOut(3) && (
+            <div className="text-white text-sm font-semibold opacity-75">Sitting out</div>
+          )}
         </div>
         
         {/* Trick in center */}
