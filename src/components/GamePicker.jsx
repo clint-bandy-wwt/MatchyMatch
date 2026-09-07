@@ -195,6 +195,12 @@ const GAMES = [
     tag: 'Strategy',
   },
   {
+    id: 'euchre',
+    name: 'Euchre',
+    description: '4-player trick-taking card game · Teams battle to 10 points',
+    tag: 'Strategy',
+  },
+  {
     id: 'rochellespinner',
     name: "Rochelle's Spinner",
     description: 'Spin the wheel and try your luck!',
