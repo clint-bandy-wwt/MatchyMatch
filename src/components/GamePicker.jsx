@@ -263,6 +263,12 @@ const GAMES = [
     builder: 'Clint',
     isNew: true,
   },
+  {
+    id: 'euchre',
+    name: 'Euchre',
+    description: '4-player trick-taking card game — partner with North to reach 10 points!',
+    tag: 'Strategy',
+  },
 ]
 
 
