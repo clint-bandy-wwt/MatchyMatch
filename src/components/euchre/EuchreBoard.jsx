@@ -103,7 +103,7 @@ function aiBid(hand, upcard, position, dealer, pass1) {
 }
 
 // Simple AI for card play
-function aiPlayCard(hand, trick, trump, position) {
+function aiPlayCard(hand, trick, trump) {
   const ledSuit = trick.length > 0 ? effectiveSuit(trick[0].card, trump) : null
   const playable = hand.filter(c => canPlayCard(c, hand, ledSuit, trump))
   
@@ -187,38 +187,6 @@ export default function EuchreBoard() {
       if (aiTimerRef.current) clearTimeout(aiTimerRef.current)
     }
   }, [])
-  
-  // AI turns
-  useEffect(() => {
-    if (game.phase === 'bid1' && !isHumanTurn) {
-      aiTimerRef.current = setTimeout(() => {
-        const decision = aiBid(game.hands[currentPosition], game.upcard, currentPosition, dealerPosition, false)
-        if (decision === 'order') {
-          handleBid('order')
-        } else {
-          handleBid('pass')
-        }
-      }, 1000)
-    } else if (game.phase === 'bid2' && !isHumanTurn) {
-      aiTimerRef.current = setTimeout(() => {
-        const decision = aiBid(game.hands[currentPosition], game.upcard, currentPosition, dealerPosition, true)
-        if (decision === 'pass') {
-          handleBid('pass')
-        } else {
-          handleCallSuit(decision)
-        }
-      }, 1000)
-    } else if (game.phase === 'play' && !isHumanTurn) {
-      aiTimerRef.current = setTimeout(() => {
-        const card = aiPlayCard(game.hands[currentPosition], game.trick, game.trump, currentPosition)
-        handlePlayCard(card, currentPosition)
-      }, 1000)
-    }
-    
-    return () => {
-      if (aiTimerRef.current) clearTimeout(aiTimerRef.current)
-    }
-  }, [game.phase, game.currentPlayer, isHumanTurn])
   
   const handleBid = useCallback((action) => {
     setGame(prev => {
@@ -373,6 +341,39 @@ export default function EuchreBoard() {
     })
   }, [])
   
+  // AI turns
+  useEffect(() => {
+    if (game.phase === 'bid1' && !isHumanTurn) {
+      aiTimerRef.current = setTimeout(() => {
+        const decision = aiBid(game.hands[currentPosition], game.upcard, currentPosition, dealerPosition, false)
+        if (decision === 'order') {
+          handleBid('order')
+        } else {
+          handleBid('pass')
+        }
+      }, 1000)
+    } else if (game.phase === 'bid2' && !isHumanTurn) {
+      aiTimerRef.current = setTimeout(() => {
+        const decision = aiBid(game.hands[currentPosition], game.upcard, currentPosition, dealerPosition, true)
+        if (decision === 'pass') {
+          handleBid('pass')
+        } else {
+          handleCallSuit(decision)
+        }
+      }, 1000)
+    } else if (game.phase === 'play' && !isHumanTurn) {
+      aiTimerRef.current = setTimeout(() => {
+        const card = aiPlayCard(game.hands[currentPosition], game.trick, game.trump)
+        handlePlayCard(card, currentPosition)
+      }, 1000)
+    }
+    
+    return () => {
+      if (aiTimerRef.current) clearTimeout(aiTimerRef.current)
+    }
+  }, [game.phase, game.currentPlayer, isHumanTurn, game.hands, game.upcard, game.trick, game.trump, 
+      currentPosition, dealerPosition, handleBid, handleCallSuit, handlePlayCard])
+  
   const handleTrickEndContinue = useCallback(() => {
     setGame(prev => {
       const next = { ...prev }
@@ -417,11 +418,12 @@ export default function EuchreBoard() {
     setGame(initGame())
   }, [])
   
-  const renderCard = (card, onClick, disabled = false, faceDown = false) => {
+  const renderCard = (card, onClick, disabled = false, faceDown = false, key = null) => {
     const isRed = card.suit === '♥' || card.suit === '♦'
     
     return (
       <button
+        key={key}
         onClick={onClick}
         disabled={disabled}
         className="card"
@@ -548,7 +550,7 @@ export default function EuchreBoard() {
         <div className="flex flex-col items-center gap-4 p-6 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
           <div className="text-xl font-semibold">Dealer: Pick up and discard a card</div>
           <div className="flex gap-2">
-            {game.hands.South.map((card, i) => 
+            {game.hands.South.map((card, idx) => 
               renderCard(card, () => handleDiscard(card), false, false)
             )}
           </div>
@@ -640,14 +642,15 @@ export default function EuchreBoard() {
               {game.currentPlayer === 0 && game.phase === 'play' && ' 👈'}
             </div>
             <div className="flex gap-2">
-              {game.hands.South.map((card, i) => {
+              {game.hands.South.map((card, idx) => {
                 const ledSuit = game.trick.length > 0 ? effectiveSuit(game.trick[0].card, game.trump) : null
                 const canPlay = isHumanTurn && game.phase === 'play' && canPlayCard(card, game.hands.South, ledSuit, game.trump)
                 return renderCard(
                   card, 
                   canPlay ? () => handlePlayCard(card, 'South') : null,
                   !canPlay,
-                  false
+                  false,
+                  `south-${idx}`
                 )
               })}
             </div>
