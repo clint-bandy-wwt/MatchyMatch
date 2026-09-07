@@ -198,21 +198,17 @@ export default function EuchreBoard() {
         next.maker = currentPosition
         next.message = `${currentPosition} orders up ${prev.upcard.rank}${prev.upcard.suit}`
         
-        // If dealer, go to discard phase
-        if (currentPosition === dealerPosition) {
+        // Dealer picks up the upcard
+        if (dealerPosition === 'South') {
+          // Human dealer must discard
           next.phase = 'discard'
           next.currentPlayer = prev.dealer
-        } else if (dealerPosition === 'South') {
-          // Dealer (human) must discard
-          next.phase = 'discard'
-          next.currentPlayer = prev.dealer
-          // Dealer picks up the upcard
           next.hands = {
             ...prev.hands,
             South: [...prev.hands.South, prev.upcard]
           }
         } else {
-          // AI dealer picks up and discards automatically
+          // AI dealer picks up upcard and discards automatically
           const dealerHand = [...prev.hands[dealerPosition], prev.upcard]
           // Discard lowest non-trump
           const nonTrump = dealerHand.filter(c => effectiveSuit(c, next.trump) !== next.trump)
@@ -300,7 +296,7 @@ export default function EuchreBoard() {
         next.phase = 'trickEnd'
         next.currentPlayer = POSITIONS.indexOf(winnerPos)
         
-        // Check if hand is over
+        // Check if hand is over (all 5 tricks played)
         if (next.tricksWon.NS + next.tricksWon.EW === 5) {
           const makerTeam = (next.maker === 'North' || next.maker === 'South') ? 'NS' : 'EW'
           const makerTricks = next.tricksWon[makerTeam]
@@ -498,6 +494,16 @@ export default function EuchreBoard() {
       {/* Bidding Phase */}
       {!isGameOver && (game.phase === 'bid1' || game.phase === 'bid2') && (
         <div className="flex flex-col items-center gap-4 p-6 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+          {/* Show human hand during bidding */}
+          <div className="flex flex-col items-center gap-2 mb-2">
+            <div className="text-sm font-semibold">Your Hand:</div>
+            <div className="flex gap-2">
+              {game.hands.South.map((card, idx) => 
+                renderCard(card, null, true, false, `bid-${idx}`)
+              )}
+            </div>
+          </div>
+          
           <div className="text-xl font-semibold">
             {game.phase === 'bid1' ? 'Round 1 Bidding' : 'Round 2 Bidding'}
           </div>
@@ -551,14 +557,14 @@ export default function EuchreBoard() {
           <div className="text-xl font-semibold">Dealer: Pick up and discard a card</div>
           <div className="flex gap-2">
             {game.hands.South.map((card, idx) => 
-              renderCard(card, () => handleDiscard(card), false, false)
+              renderCard(card, () => handleDiscard(card), false, false, `discard-${idx}`)
             )}
           </div>
         </div>
       )}
       
       {/* Play Area */}
-      {!isGameOver && (game.phase === 'play' || game.phase === 'trickEnd') && (
+      {!isGameOver && (game.phase === 'play' || game.phase === 'trickEnd' || game.phase === 'handEnd') && (
         <div className="flex flex-col items-center gap-6 w-full">
           {/* North (top) */}
           <div className="flex flex-col items-center gap-2">
@@ -602,7 +608,7 @@ export default function EuchreBoard() {
                   }
                   return (
                     <div key={i} style={{ position: 'absolute', ...positions[play.position] }}>
-                      {renderCard(play.card, null, true)}
+                      {renderCard(play.card, null, true, false, `trick-${i}`)}
                     </div>
                   )
                 })}
