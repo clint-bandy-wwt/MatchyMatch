@@ -32,8 +32,6 @@ function cardKey(card) {
 }
 
 function cardValue(card, trump) {
-  // Returns numeric value for sorting/comparison
-  // Higher = better
   const rankValues = { 9: 1, 10: 2, J: 3, Q: 4, K: 5, A: 6 }
   
   if (card.suit === trump) {
@@ -60,7 +58,6 @@ function sameColor(suit1, suit2) {
 }
 
 function effectiveSuit(card, trump) {
-  // Left bower counts as trump suit
   if (card.rank === 'J' && sameColor(card.suit, trump)) {
     return trump
   }
@@ -82,7 +79,6 @@ function trickWinner(trick, trump) {
     const card = trick[i].card
     const eSuit = effectiveSuit(card, trump)
     
-    // Trump beats non-trump
     if (eSuit === trump && leadSuit !== trump) {
       const val = cardValue(card, trump)
       if (val > bestValue) {
@@ -102,26 +98,24 @@ function trickWinner(trick, trump) {
 }
 
 function canPlayCard(card, hand, trick, trump) {
-  if (trick.length === 0) return true // Lead card
+  if (trick.length === 0) return true
   
   const leadCard = trick[0].card
   const leadSuit = effectiveSuit(leadCard, trump)
   const cardSuit = effectiveSuit(card, trump)
   
-  // If you have the suit, you must follow
   const hasSuit = hand.some(c => effectiveSuit(c, trump) === leadSuit)
   
   if (hasSuit) {
     return cardSuit === leadSuit
   }
   
-  return true // No suit, can play anything
+  return true
 }
 
 // ── AI Logic ─────────────────────────────────────────────────────────────────
 
 function aiShouldOrderUp(hand, upcard, position, dealer) {
-  // Simple heuristic: count trump and high cards
   let trumpCount = 0
   let highCards = 0
   
@@ -138,17 +132,14 @@ function aiShouldOrderUp(hand, upcard, position, dealer) {
     }
   }
   
-  // If dealer's partner and have 2+ trump, order up
   if ((position + 2) % 4 === dealer && trumpCount >= 2) {
     return true
   }
   
-  // If dealer and have 1+ trump including face, order up
   if (position === dealer && trumpCount >= 1 && highCards >= 1) {
     return true
   }
   
-  // Otherwise need 3+ trump or 2+ with bowers
   if (trumpCount >= 3) return true
   if (trumpCount >= 2 && highCards >= 2) return true
   
@@ -156,7 +147,6 @@ function aiShouldOrderUp(hand, upcard, position, dealer) {
 }
 
 function aiCallTrump(hand, upcard) {
-  // Count strength in each non-upcard suit
   const scores = {}
   const excludeSuit = upcard.suit
   
@@ -178,7 +168,6 @@ function aiCallTrump(hand, upcard) {
     scores[suit] = count * 10 + high * 5
   }
   
-  // Pick best suit if score >= 20
   let best = null
   let bestScore = 20
   
@@ -198,9 +187,7 @@ function aiPlayCard(hand, trick, trump) {
   if (legal.length === 0) return hand[0]
   if (legal.length === 1) return legal[0]
   
-  // Simple strategy: play highest if winning, lowest if losing
   if (trick.length === 0) {
-    // Lead with highest trump or highest card
     const trumpCards = legal.filter(c => effectiveSuit(c, trump) === trump)
     if (trumpCards.length > 0) {
       return trumpCards.reduce((a, b) => cardValue(a, trump) > cardValue(b, trump) ? a : b)
@@ -208,16 +195,13 @@ function aiPlayCard(hand, trick, trump) {
     return legal.reduce((a, b) => cardValue(a, trump) > cardValue(b, trump) ? a : b)
   }
   
-  // Follow suit
   const currentWinner = trickWinner(trick, trump)
   const myTeam = [0, 2].includes(POSITIONS.indexOf('South')) ? [0, 2] : [1, 3]
   const winnerIdx = POSITIONS.indexOf(currentWinner)
   
   if (myTeam.includes(winnerIdx)) {
-    // Partner winning, play lowest
     return legal.reduce((a, b) => cardValue(a, trump) < cardValue(b, trump) ? a : b)
   } else {
-    // Opponent winning, try to beat it
     const winCard = trick.find(t => t.position === currentWinner).card
     const winValue = cardValue(winCard, trump)
     const beaters = legal.filter(c => cardValue(c, trump) > winValue && effectiveSuit(c, trump) === effectiveSuit(winCard, trump))
@@ -226,18 +210,15 @@ function aiPlayCard(hand, trick, trump) {
       return beaters.reduce((a, b) => cardValue(a, trump) < cardValue(b, trump) ? a : b)
     }
     
-    // Can't beat, play lowest
     return legal.reduce((a, b) => cardValue(a, trump) < cardValue(b, trump) ? a : b)
   }
 }
 
 function aiDiscard(hand, trump) {
-  // Discard lowest non-trump
   const nonTrump = hand.filter(c => effectiveSuit(c, trump) !== trump)
   if (nonTrump.length > 0) {
     return nonTrump.reduce((a, b) => cardValue(a, trump) < cardValue(b, trump) ? a : b)
   }
-  // All trump, discard lowest
   return hand.reduce((a, b) => cardValue(a, trump) < cardValue(b, trump) ? a : b)
 }
 
@@ -245,7 +226,7 @@ function aiDiscard(hand, trump) {
 
 function initGame() {
   return {
-    phase: 'deal', // deal, bid1, bid2, discard, play, handEnd, gameEnd
+    phase: 'deal',
     dealer: 0,
     hands: [[], [], [], []],
     upcard: null,
@@ -254,7 +235,7 @@ function initGame() {
     alonePlayer: null,
     trick: [],
     currentPlayer: null,
-    tricksWon: [0, 0], // [team0, team1]
+    tricksWon: [0, 0],
     score: [0, 0],
     message: 'Click Deal to start',
     biddingRound: 1,
@@ -266,7 +247,6 @@ function dealHand(state) {
   const deck = shuffleDeck(createDeck())
   const hands = [[], [], [], []]
   
-  // Deal 5 cards to each player
   for (let i = 0; i < 5; i++) {
     for (let p = 0; p < 4; p++) {
       hands[p].push(deck.pop())
@@ -297,15 +277,11 @@ function dealHand(state) {
 export default function EuchreBoard() {
   const [state, setState] = useState(initGame)
   
-  const humanPos = 0 // South
-  
-  // ── Deal ───────────────────────────────────────────────────────────
+  const humanPos = 0
   
   const handleDeal = useCallback(() => {
     setState(s => dealHand(s))
   }, [])
-  
-  // ── Bidding ────────────────────────────────────────────────────────
   
   const handleOrderUp = useCallback(() => {
     const alone = window.confirm('Go alone?')
@@ -324,46 +300,44 @@ export default function EuchreBoard() {
         bidHistory: [...s.bidHistory, { position: s.currentPlayer, action: alone ? 'order-alone' : 'order' }],
       }
       
-      // If dealer, add upcard to hand
       if (s.currentPlayer === s.dealer) {
         newState.hands = s.hands.map((h, i) => i === s.dealer ? [...h, s.upcard] : h)
       }
       
       return newState
     })
-  }, [state.currentPlayer, state.dealer])
+  }, [])
   
   const handlePass = useCallback(() => {
-    const nextPlayer = (state.currentPlayer + 1) % 4
-    const newHistory = [...state.bidHistory, { position: state.currentPlayer, action: 'pass' }]
-    
-    // Check if we've gone around once
-    if (state.biddingRound === 1 && nextPlayer === (state.dealer + 1) % 4) {
-      // Move to round 2
-      setState(s => ({
-        ...s,
-        biddingRound: 2,
-        currentPlayer: nextPlayer,
-        bidHistory: newHistory,
-        message: `${POSITIONS[nextPlayer]}: Call a suit or pass?`,
-      }))
-    } else if (state.biddingRound === 2 && nextPlayer === state.dealer) {
-      // Dealer must call in round 2
-      setState(s => ({
-        ...s,
-        currentPlayer: nextPlayer,
-        bidHistory: newHistory,
-        message: `${POSITIONS[nextPlayer]}: Dealer must call a suit`,
-      }))
-    } else {
-      setState(s => ({
-        ...s,
-        currentPlayer: nextPlayer,
-        bidHistory: newHistory,
-        message: `${POSITIONS[nextPlayer]}: ${state.biddingRound === 1 ? 'Order up or pass?' : 'Call a suit or pass?'}`,
-      }))
-    }
-  }, [state.currentPlayer, state.dealer, state.biddingRound, state.bidHistory])
+    setState(s => {
+      const nextPlayer = (s.currentPlayer + 1) % 4
+      const newHistory = [...s.bidHistory, { position: s.currentPlayer, action: 'pass' }]
+      
+      if (s.biddingRound === 1 && nextPlayer === (s.dealer + 1) % 4) {
+        return {
+          ...s,
+          biddingRound: 2,
+          currentPlayer: nextPlayer,
+          bidHistory: newHistory,
+          message: `${POSITIONS[nextPlayer]}: Call a suit or pass?`,
+        }
+      } else if (s.biddingRound === 2 && nextPlayer === s.dealer) {
+        return {
+          ...s,
+          currentPlayer: nextPlayer,
+          bidHistory: newHistory,
+          message: `${POSITIONS[nextPlayer]}: Dealer must call a suit`,
+        }
+      } else {
+        return {
+          ...s,
+          currentPlayer: nextPlayer,
+          bidHistory: newHistory,
+          message: `${POSITIONS[nextPlayer]}: ${s.biddingRound === 1 ? 'Order up or pass?' : 'Call a suit or pass?'}`,
+        }
+      }
+    })
+  }, [])
   
   const handleCallTrump = useCallback((suit) => {
     const alone = window.confirm('Go alone?')
@@ -378,9 +352,7 @@ export default function EuchreBoard() {
       message: `${POSITIONS[(s.dealer + 1) % 4]} leads`,
       bidHistory: [...s.bidHistory, { position: s.currentPlayer, action: alone ? `call-${suit}-alone` : `call-${suit}` }],
     }))
-  }, [state.currentPlayer, state.dealer, state.bidHistory])
-  
-  // ── Discard ────────────────────────────────────────────────────────
+  }, [])
   
   const handleDiscard = useCallback((card) => {
     setState(s => ({
@@ -390,25 +362,25 @@ export default function EuchreBoard() {
       currentPlayer: (s.dealer + 1) % 4,
       message: `${POSITIONS[(s.dealer + 1) % 4]} leads`,
     }))
-  }, [state.dealer])
-  
-  // ── Play Card ──────────────────────────────────────────────────────
+  }, [])
   
   const handlePlayCard = useCallback((card) => {
-    if (!canPlayCard(card, state.hands[humanPos], state.trick, state.trump)) {
-      return // Invalid play
-    }
-    
-    const newTrick = [...state.trick, { position: POSITIONS[humanPos], card }]
-    const newHands = state.hands.map((h, i) => i === humanPos ? h.filter(c => cardKey(c) !== cardKey(card)) : h)
-    
-    setState(s => ({
-      ...s,
-      trick: newTrick,
-      hands: newHands,
-      currentPlayer: (s.currentPlayer + 1) % 4,
-    }))
-  }, [state.hands, state.trick, state.trump, state.currentPlayer, humanPos])
+    setState(s => {
+      if (!canPlayCard(card, s.hands[humanPos], s.trick, s.trump)) {
+        return s
+      }
+      
+      const newTrick = [...s.trick, { position: POSITIONS[humanPos], card }]
+      const newHands = s.hands.map((h, i) => i === humanPos ? h.filter(c => cardKey(c) !== cardKey(card)) : h)
+      
+      return {
+        ...s,
+        trick: newTrick,
+        hands: newHands,
+        currentPlayer: (s.currentPlayer + 1) % 4,
+      }
+    })
+  }, [humanPos])
   
   // ── AI Turn ────────────────────────────────────────────────────────
   
@@ -417,83 +389,135 @@ export default function EuchreBoard() {
     if (state.phase === 'deal' || state.phase === 'handEnd' || state.phase === 'gameEnd') return
     
     const timer = setTimeout(() => {
-      const pos = state.currentPlayer
-      
-      // Check if this player is sitting out (going alone)
-      if (state.alonePlayer !== null) {
-        const aloneTeam = state.alonePlayer % 2
-        const currentTeam = pos % 2
-        if (aloneTeam === currentTeam && pos !== state.alonePlayer) {
-          // Partner of alone player sits out
-          setState(s => ({
-            ...s,
-            currentPlayer: (s.currentPlayer + 1) % 4,
-          }))
-          return
+      setState(prevState => {
+        const pos = prevState.currentPlayer
+        
+        // Skip partner if going alone
+        if (prevState.alonePlayer !== null) {
+          const aloneTeam = prevState.alonePlayer % 2
+          const currentTeam = pos % 2
+          if (aloneTeam === currentTeam && pos !== prevState.alonePlayer) {
+            return {
+              ...prevState,
+              currentPlayer: (prevState.currentPlayer + 1) % 4,
+            }
+          }
         }
-      }
-      
-      if (state.phase === 'bid1') {
-        const decision = aiShouldOrderUp(state.hands[pos], state.upcard, pos, state.dealer)
-        if (decision) {
-          const alone = false // AI doesn't go alone for simplicity
-          
-          setState(s => {
+        
+        if (prevState.phase === 'bid1') {
+          const decision = aiShouldOrderUp(prevState.hands[pos], prevState.upcard, pos, prevState.dealer)
+          if (decision) {
+            const alone = false
+            
             const newState = {
-              ...s,
-              phase: pos === s.dealer ? 'discard' : 'play',
-              trump: s.upcard.suit,
+              ...prevState,
+              phase: pos === prevState.dealer ? 'discard' : 'play',
+              trump: prevState.upcard.suit,
               caller: pos,
               alonePlayer: alone ? pos : null,
-              currentPlayer: pos === s.dealer ? pos : (s.dealer + 1) % 4,
-              message: pos === s.dealer 
+              currentPlayer: pos === prevState.dealer ? pos : (prevState.dealer + 1) % 4,
+              message: pos === prevState.dealer 
                 ? `${POSITIONS[pos]} picks up and discards`
-                : `${POSITIONS[(s.dealer + 1) % 4]} leads`,
-              bidHistory: [...s.bidHistory, { position: pos, action: alone ? 'order-alone' : 'order' }],
+                : `${POSITIONS[(prevState.dealer + 1) % 4]} leads`,
+              bidHistory: [...prevState.bidHistory, { position: pos, action: alone ? 'order-alone' : 'order' }],
             }
             
-            // If dealer, add upcard to hand
-            if (pos === s.dealer) {
-              newState.hands = s.hands.map((h, i) => i === s.dealer ? [...h, s.upcard] : h)
+            if (pos === prevState.dealer) {
+              newState.hands = prevState.hands.map((h, i) => i === prevState.dealer ? [...h, prevState.upcard] : h)
             }
             
             return newState
-          })
-        } else {
-          handlePass()
+          } else {
+            // Pass
+            const nextPlayer = (pos + 1) % 4
+            const newHistory = [...prevState.bidHistory, { position: pos, action: 'pass' }]
+            
+            if (prevState.biddingRound === 1 && nextPlayer === (prevState.dealer + 1) % 4) {
+              return {
+                ...prevState,
+                biddingRound: 2,
+                currentPlayer: nextPlayer,
+                bidHistory: newHistory,
+                message: `${POSITIONS[nextPlayer]}: Call a suit or pass?`,
+              }
+            } else {
+              return {
+                ...prevState,
+                currentPlayer: nextPlayer,
+                bidHistory: newHistory,
+                message: `${POSITIONS[nextPlayer]}: Order up or pass?`,
+              }
+            }
+          }
+        } else if (prevState.phase === 'bid2') {
+          const isDealer = pos === prevState.dealer
+          const called = aiCallTrump(prevState.hands[pos], prevState.upcard)
+          
+          if (called || isDealer) {
+            const suit = called || SUITS.filter(s => s !== prevState.upcard.suit)[Math.floor(Math.random() * 3)]
+            const alone = false
+            
+            return {
+              ...prevState,
+              phase: 'play',
+              trump: suit,
+              caller: pos,
+              alonePlayer: alone ? pos : null,
+              currentPlayer: (prevState.dealer + 1) % 4,
+              message: `${POSITIONS[(prevState.dealer + 1) % 4]} leads`,
+              bidHistory: [...prevState.bidHistory, { position: pos, action: alone ? `call-${suit}-alone` : `call-${suit}` }],
+            }
+          } else {
+            // Pass
+            const nextPlayer = (pos + 1) % 4
+            const newHistory = [...prevState.bidHistory, { position: pos, action: 'pass' }]
+            
+            if (nextPlayer === prevState.dealer) {
+              return {
+                ...prevState,
+                currentPlayer: nextPlayer,
+                bidHistory: newHistory,
+                message: `${POSITIONS[nextPlayer]}: Dealer must call a suit`,
+              }
+            } else {
+              return {
+                ...prevState,
+                currentPlayer: nextPlayer,
+                bidHistory: newHistory,
+                message: `${POSITIONS[nextPlayer]}: Call a suit or pass?`,
+              }
+            }
+          }
+        } else if (prevState.phase === 'discard') {
+          const card = aiDiscard(prevState.hands[pos], prevState.trump)
+          
+          return {
+            ...prevState,
+            phase: 'play',
+            hands: prevState.hands.map((h, i) => i === prevState.dealer ? h.filter(c => cardKey(c) !== cardKey(card)) : h),
+            currentPlayer: (prevState.dealer + 1) % 4,
+            message: `${POSITIONS[(prevState.dealer + 1) % 4]} leads`,
+          }
+        } else if (prevState.phase === 'play') {
+          const card = aiPlayCard(prevState.hands[pos], prevState.trick, prevState.trump)
+          
+          const newTrick = [...prevState.trick, { position: POSITIONS[pos], card }]
+          const newHands = prevState.hands.map((h, i) => i === pos ? h.filter(c => cardKey(c) !== cardKey(card)) : h)
+          
+          return {
+            ...prevState,
+            trick: newTrick,
+            hands: newHands,
+            currentPlayer: (prevState.currentPlayer + 1) % 4,
+          }
         }
-      } else if (state.phase === 'bid2') {
-        const isDealer = pos === state.dealer
-        const called = aiCallTrump(state.hands[pos], state.upcard)
         
-        if (called || isDealer) {
-          const suit = called || SUITS.filter(s => s !== state.upcard.suit)[Math.floor(Math.random() * 3)]
-          handleCallTrump(suit)
-        } else {
-          handlePass()
-        }
-      } else if (state.phase === 'discard') {
-        // AI dealer discards
-        const card = aiDiscard(state.hands[pos], state.trump)
-        handleDiscard(card)
-      } else if (state.phase === 'play') {
-        // AI plays a card
-        const card = aiPlayCard(state.hands[pos], state.trick, state.trump)
-        
-        const newTrick = [...state.trick, { position: POSITIONS[pos], card }]
-        const newHands = state.hands.map((h, i) => i === pos ? h.filter(c => cardKey(c) !== cardKey(card)) : h)
-        
-        setState(s => ({
-          ...s,
-          trick: newTrick,
-          hands: newHands,
-          currentPlayer: (s.currentPlayer + 1) % 4,
-        }))
-      }
+        return prevState
+      })
     }, 800)
     
     return () => clearTimeout(timer)
-  }, [state, humanPos, handlePass, handleCallTrump, handleDiscard])
+  }, [state.currentPlayer, state.phase, humanPos])
   
   // ── Trick Complete ─────────────────────────────────────────────────
   
@@ -512,82 +536,73 @@ export default function EuchreBoard() {
     
     const allHandsEmpty = state.hands.every(h => h.length === 0)
     
-    if (allHandsEmpty) {
-      // Hand over, calculate points
-      const callerTeam = state.caller % 2
-      const callerTricks = newTricksWon[callerTeam]
-      
-      let points = 0
-      let msg = ''
-      
-      if (callerTricks >= 3) {
-        if (callerTricks === 5) {
-          points = state.alonePlayer !== null ? 4 : 2
-          msg = state.alonePlayer !== null ? 'March (alone) - 4 points!' : 'March - 2 points!'
-        } else {
-          points = 1
-          msg = '1 point'
-        }
+    const timer = setTimeout(() => {
+      if (allHandsEmpty) {
+        const callerTeam = state.caller % 2
+        const callerTricks = newTricksWon[callerTeam]
         
-        const newScore = [...state.score]
-        newScore[callerTeam] += points
+        let points = 0
+        let msg = ''
         
-        if (newScore[callerTeam] >= 10) {
-          setTimeout(() => {
+        if (callerTricks >= 3) {
+          if (callerTricks === 5) {
+            points = state.alonePlayer !== null ? 4 : 2
+            msg = state.alonePlayer !== null ? 'March (alone) - 4 points!' : 'March - 2 points!'
+          } else {
+            points = 1
+            msg = '1 point'
+          }
+          
+          const newScore = [...state.score]
+          newScore[callerTeam] += points
+          
+          if (newScore[callerTeam] >= 10) {
             setState(s => ({
               ...s,
               phase: 'gameEnd',
               score: newScore,
+              tricksWon: newTricksWon,
+              trick: [],
               message: `Team ${callerTeam === 0 ? 'North/South' : 'East/West'} wins the game!`,
             }))
-          }, 2000)
-        } else {
-          setTimeout(() => {
+          } else {
             setState(s => ({
               ...s,
               phase: 'handEnd',
               score: newScore,
               tricksWon: newTricksWon,
+              trick: [],
               message: `${POSITIONS[s.caller]} team: ${msg}. Click Deal for next hand.`,
             }))
-          }, 2000)
-        }
-      } else {
-        // Euchred
-        points = 2
-        msg = 'Euchred! 2 points to opponents!'
-        
-        const newScore = [...state.score]
-        newScore[1 - callerTeam] += points
-        
-        if (newScore[1 - callerTeam] >= 10) {
-          setTimeout(() => {
+          }
+        } else {
+          points = 2
+          msg = 'Euchred! 2 points to opponents!'
+          
+          const newScore = [...state.score]
+          newScore[1 - callerTeam] += points
+          
+          if (newScore[1 - callerTeam] >= 10) {
             setState(s => ({
               ...s,
               phase: 'gameEnd',
               score: newScore,
+              tricksWon: newTricksWon,
+              trick: [],
               message: `Team ${1 - callerTeam === 0 ? 'North/South' : 'East/West'} wins the game!`,
             }))
-          }, 2000)
-        } else {
-          setTimeout(() => {
+          } else {
             setState(s => ({
               ...s,
               phase: 'handEnd',
               score: newScore,
               tricksWon: newTricksWon,
+              trick: [],
               message: `${msg} Click Deal for next hand.`,
             }))
-          }, 2000)
+          }
         }
-      }
-      
-      setState(s => ({
-        ...s,
-        tricksWon: newTricksWon,
-      }))
-    } else {
-      setTimeout(() => {
+      } else {
         setState(s => ({
           ...s,
           trick: [],
@@ -595,11 +610,11 @@ export default function EuchreBoard() {
           currentPlayer: winnerIdx,
           message: `${winner} won the trick`,
         }))
-      }, 1500)
-    }
+      }
+    }, 1500)
+    
+    return () => clearTimeout(timer)
   }, [state.trick, state.phase, state.trump, state.hands, state.tricksWon, state.caller, state.alonePlayer, state.score])
-  
-  // ── New Hand ───────────────────────────────────────────────────────
   
   const handleNextHand = useCallback(() => {
     setState(s => ({
@@ -613,8 +628,6 @@ export default function EuchreBoard() {
   const handleNewGame = useCallback(() => {
     setState(initGame())
   }, [])
-  
-  // ── Render ─────────────────────────────────────────────────────────
   
   const humanHand = state.hands[humanPos]
   
@@ -651,8 +664,9 @@ export default function EuchreBoard() {
     )
   }
   
-  const renderCardBack = () => (
+  const renderCardBack = (idx) => (
     <div
+      key={`back-${idx}`}
       style={{
         width: 60,
         height: 90,
@@ -703,6 +717,11 @@ export default function EuchreBoard() {
         </div>
       )}
       
+      {/* Dealer indicator */}
+      <div className="text-sm font-semibold opacity-80">
+        Dealer: {POSITIONS[state.dealer]}
+      </div>
+      
       {/* Message */}
       <div className="text-center text-lg font-semibold min-h-[2rem]">
         {state.message}
@@ -712,17 +731,17 @@ export default function EuchreBoard() {
       <div className="relative w-full h-96 bg-green-700 rounded-2xl border-4 border-green-900 flex items-center justify-center">
         {/* North */}
         <div className="absolute top-4 flex gap-2">
-          {state.hands[2].map(() => renderCardBack())}
+          {state.hands[2].map((_, idx) => renderCardBack(`north-${idx}`))}
         </div>
         
         {/* East */}
         <div className="absolute right-4 flex flex-col gap-2">
-          {state.hands[1].map(() => renderCardBack())}
+          {state.hands[1].map((_, idx) => renderCardBack(`east-${idx}`))}
         </div>
         
         {/* West */}
         <div className="absolute left-4 flex flex-col gap-2">
-          {state.hands[3].map(() => renderCardBack())}
+          {state.hands[3].map((_, idx) => renderCardBack(`west-${idx}`))}
         </div>
         
         {/* Trick in center */}
@@ -736,7 +755,7 @@ export default function EuchreBoard() {
         </div>
         
         {/* Upcard (during bidding) */}
-        {state.phase === 'bid1' && state.upcard && (
+        {(state.phase === 'bid1' || state.phase === 'bid2') && state.upcard && (
           <div className="absolute bottom-4 right-4">
             {renderCard(state.upcard)}
           </div>
@@ -777,7 +796,7 @@ export default function EuchreBoard() {
         {state.phase === 'bid1' && state.currentPlayer === humanPos && (
           <>
             <button onClick={handleOrderUp} className="btn-primary bg-green-600 hover:bg-green-700">
-              Order Up {state.upcard.suit}
+              Order Up {state.upcard?.suit}
             </button>
             <button onClick={handlePass} className="btn-ghost">
               Pass
@@ -787,7 +806,7 @@ export default function EuchreBoard() {
         
         {state.phase === 'bid2' && state.currentPlayer === humanPos && (
           <>
-            {SUITS.filter(s => s !== state.upcard.suit).map(suit => (
+            {SUITS.filter(s => s !== state.upcard?.suit).map(suit => (
               <button
                 key={suit}
                 onClick={() => handleCallTrump(suit)}
