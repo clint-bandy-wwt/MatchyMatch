@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -275,12 +275,10 @@ function dealHand(state) {
 
 export default function EuchreBoard() {
   const [state, setState] = useState(initGame)
-  const trickCompleteRef = useRef(false)
   
   const humanPos = 0
   
   const handleDeal = useCallback(() => {
-    trickCompleteRef.current = false
     setState(s => dealHand(s))
   }, [])
   
@@ -314,28 +312,33 @@ export default function EuchreBoard() {
       const nextPlayer = (s.currentPlayer + 1) % 4
       const newHistory = [...s.bidHistory, { position: s.currentPlayer, action: 'pass' }]
       
-      if (s.biddingRound === 1 && nextPlayer === (s.dealer + 1) % 4) {
+      // If dealer passes in round 1, move to round 2
+      if (s.biddingRound === 1 && s.currentPlayer === s.dealer) {
         return {
           ...s,
           biddingRound: 2,
-          currentPlayer: nextPlayer,
+          currentPlayer: (s.dealer + 1) % 4,
           bidHistory: newHistory,
-          message: `${POSITIONS[nextPlayer]}: Call a suit or pass?`,
+          message: `${POSITIONS[(s.dealer + 1) % 4]}: Call a suit or pass?`,
         }
-      } else if (s.biddingRound === 2 && nextPlayer === s.dealer) {
+      }
+      
+      // In round 2, next player is dealer - dealer must call
+      if (s.biddingRound === 2 && nextPlayer === s.dealer) {
         return {
           ...s,
           currentPlayer: nextPlayer,
           bidHistory: newHistory,
           message: `${POSITIONS[nextPlayer]}: Dealer must call a suit`,
         }
-      } else {
-        return {
-          ...s,
-          currentPlayer: nextPlayer,
-          bidHistory: newHistory,
-          message: `${POSITIONS[nextPlayer]}: ${s.biddingRound === 1 ? 'Order up or pass?' : 'Call a suit or pass?'}`,
-        }
+      }
+      
+      // Normal pass
+      return {
+        ...s,
+        currentPlayer: nextPlayer,
+        bidHistory: newHistory,
+        message: `${POSITIONS[nextPlayer]}: ${s.biddingRound === 1 ? 'Order up or pass?' : 'Call a suit or pass?'}`,
       }
     })
   }, [])
@@ -431,21 +434,22 @@ export default function EuchreBoard() {
             const nextPlayer = (pos + 1) % 4
             const newHistory = [...prevState.bidHistory, { position: pos, action: 'pass' }]
             
-            if (prevState.biddingRound === 1 && nextPlayer === (prevState.dealer + 1) % 4) {
+            // If dealer passes in round 1, move to round 2
+            if (pos === prevState.dealer) {
               return {
                 ...prevState,
                 biddingRound: 2,
-                currentPlayer: nextPlayer,
+                currentPlayer: (prevState.dealer + 1) % 4,
                 bidHistory: newHistory,
-                message: `${POSITIONS[nextPlayer]}: Call a suit or pass?`,
+                message: `${POSITIONS[(prevState.dealer + 1) % 4]}: Call a suit or pass?`,
               }
-            } else {
-              return {
-                ...prevState,
-                currentPlayer: nextPlayer,
-                bidHistory: newHistory,
-                message: `${POSITIONS[nextPlayer]}: Order up or pass?`,
-              }
+            }
+            
+            return {
+              ...prevState,
+              currentPlayer: nextPlayer,
+              bidHistory: newHistory,
+              message: `${POSITIONS[nextPlayer]}: Order up or pass?`,
             }
           }
         } else if (prevState.phase === 'bid2') {
@@ -523,10 +527,7 @@ export default function EuchreBoard() {
     if (state.phase !== 'play') return
     
     const expectedTrickSize = state.alonePlayer !== null ? 3 : 4
-    if (state.trick.length < expectedTrickSize) return
-    
-    if (trickCompleteRef.current) return
-    trickCompleteRef.current = true
+    if (state.trick.length !== expectedTrickSize) return
     
     const winner = trickWinner(state.trick, state.trump)
     const winnerIdx = POSITIONS.indexOf(winner)
@@ -535,7 +536,6 @@ export default function EuchreBoard() {
     const newTricksWon = [...state.tricksWon]
     newTricksWon[winnerTeam]++
     
-    // Check if active players are out of cards
     const activePlayers = [0, 1, 2, 3].filter(p => {
       if (state.alonePlayer === null) return true
       const aloneTeam = state.alonePlayer % 2
@@ -546,8 +546,6 @@ export default function EuchreBoard() {
     const allHandsEmpty = activePlayers.every(p => state.hands[p].length === 0)
     
     const timer = setTimeout(() => {
-      trickCompleteRef.current = false
-      
       if (allHandsEmpty) {
         const callerTeam = state.caller % 2
         const callerTricks = newTricksWon[callerTeam]
@@ -625,10 +623,9 @@ export default function EuchreBoard() {
     }, 1500)
     
     return () => clearTimeout(timer)
-  }, [state.trick.length, state.phase, state.alonePlayer, state.caller, state.hands, state.score, state.tricksWon, state.trump])
+  }, [state.trick, state.phase, state.trump, state.hands, state.tricksWon, state.caller, state.alonePlayer, state.score])
   
   const handleNextHand = useCallback(() => {
-    trickCompleteRef.current = false
     setState(s => ({
       ...initGame(),
       dealer: (s.dealer + 1) % 4,
@@ -638,13 +635,11 @@ export default function EuchreBoard() {
   }, [])
   
   const handleNewGame = useCallback(() => {
-    trickCompleteRef.current = false
     setState(initGame())
   }, [])
   
   const humanHand = state.hands[humanPos]
   
-  // Helper to check if a player is sitting out
   const isSittingOut = (playerIdx) => {
     if (state.alonePlayer === null) return false
     const aloneTeam = state.alonePlayer % 2
