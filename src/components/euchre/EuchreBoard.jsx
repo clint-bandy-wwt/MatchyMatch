@@ -81,25 +81,43 @@ function aiBid(hand, upcard, position, dealer, pass1) {
     c.suit === trumpSuit || (c.rank === 'J' && c.suit === leftBowerSuit)
   ).length
   
+  // Count high trumps (right bower, left bower, Ace)
+  const hasRightBower = hand.some(c => c.rank === 'J' && c.suit === trumpSuit)
+  const hasLeftBower = hand.some(c => c.rank === 'J' && c.suit === leftBowerSuit)
+  const hasAce = hand.some(c => c.rank === 'A' && c.suit === trumpSuit)
+  const highTrumpCount = (hasRightBower ? 1 : 0) + (hasLeftBower ? 1 : 0) + (hasAce ? 1 : 0)
+  
   if (position === dealer) trumpCount++ // Dealer will pick up the upcard
   
   // Round 1: order up if 3+ trump
   if (!pass1) {
-    return trumpCount >= 3 ? 'order' : 'pass'
+    const shouldOrder = trumpCount >= 3
+    // Go alone if 4+ trump with 2+ high trumps, or 5 trump
+    const shouldGoAlone = (trumpCount >= 4 && highTrumpCount >= 2) || trumpCount === 5
+    return shouldOrder ? (shouldGoAlone ? 'alone' : 'order') : 'pass'
   }
   
   // Round 2: call a suit if 3+ cards in that suit
   const suitCounts = {}
+  const suitHighCounts = {}
   for (const suit of SUITS) {
     if (suit === trumpSuit) continue
     const leftBower = suit === '♠' ? '♣' : suit === '♣' ? '♠' : suit === '♥' ? '♦' : '♥'
     suitCounts[suit] = hand.filter(c => 
       c.suit === suit || (c.rank === 'J' && c.suit === leftBower)
     ).length
+    const hasRB = hand.some(c => c.rank === 'J' && c.suit === suit)
+    const hasLB = hand.some(c => c.rank === 'J' && c.suit === leftBower)
+    const hasA = hand.some(c => c.rank === 'A' && c.suit === suit)
+    suitHighCounts[suit] = (hasRB ? 1 : 0) + (hasLB ? 1 : 0) + (hasA ? 1 : 0)
   }
   
   const bestSuit = Object.entries(suitCounts).reduce((a, b) => b[1] > a[1] ? b : a, [null, 0])
-  return bestSuit[1] >= 3 ? bestSuit[0] : 'pass'
+  if (bestSuit[1] >= 3) {
+    const shouldGoAlone = (bestSuit[1] >= 4 && suitHighCounts[bestSuit[0]] >= 2) || bestSuit[1] === 5
+    return shouldGoAlone ? { suit: bestSuit[0], alone: true } : bestSuit[0]
+  }
+  return 'pass'
 }
 
 // Simple AI for card play
@@ -142,6 +160,12 @@ function aiPlayCard(hand, trick, trump) {
   return playable.reduce((a, b) => 
     cardValue(a, trump, ledSuit) < cardValue(b, trump, ledSuit) ? a : b
   )
+}
+
+// Get partner position
+function getPartner(position) {
+  const idx = POSITIONS.indexOf(position)
+  return POSITIONS[(idx + 2) % 4]
 }
 
 function initGame() {
@@ -188,7 +212,7 @@ export default function EuchreBoard() {
     }
   }, [])
   
-  const handleBid = useCallback((action) => {
+  const handleBid = useCallback((action, goAlone = false) => {
     setGame(prev => {
       const next = { ...prev, passes: action === 'pass' ? prev.passes + 1 : 0 }
       
@@ -196,7 +220,11 @@ export default function EuchreBoard() {
         // Upcard suit becomes trump
         next.trump = prev.upcard.suit
         next.maker = currentPosition
-        next.message = `${currentPosition} orders up ${prev.upcard.rank}${prev.upcard.suit}`
+        next.goingAlone = goAlone
+        next.alonePlayer = goAlone ? currentPosition : null
+        next.message = goAlone 
+          ? `${currentPosition} orders up ${prev.upcard.rank}${prev.upcard.suit} and goes alone!`
+          : `${currentPosition} orders up ${prev.upcard.rank}${prev.upcard.suit}`
         
         // Dealer picks up the upcard
         if (dealerPosition === 'South') {
@@ -221,7 +249,12 @@ export default function EuchreBoard() {
             [dealerPosition]: dealerHand.filter(c => c !== toDiscard)
           }
           next.phase = 'play'
-          next.currentPlayer = (prev.dealer + 1) % 4 // Left of dealer leads
+          // Skip partner if going alone
+          let nextPlayer = (prev.dealer + 1) % 4
+          if (goAlone && POSITIONS[nextPlayer] === getPartner(currentPosition)) {
+            nextPlayer = (nextPlayer + 1) % 4
+          }
+          next.currentPlayer = nextPlayer
         }
       } else {
         // Pass
@@ -240,14 +273,23 @@ export default function EuchreBoard() {
     })
   }, [currentPosition, dealerPosition])
   
-  const handleCallSuit = useCallback((suit) => {
+  const handleCallSuit = useCallback((suit, goAlone = false) => {
     setGame(prev => {
       const next = { ...prev }
       next.trump = suit
       next.maker = currentPosition
-      next.message = `${currentPosition} calls ${suit}`
+      next.goingAlone = goAlone
+      next.alonePlayer = goAlone ? currentPosition : null
+      next.message = goAlone
+        ? `${currentPosition} calls ${suit} and goes alone!`
+        : `${currentPosition} calls ${suit}`
       next.phase = 'play'
-      next.currentPlayer = (prev.dealer + 1) % 4 // Left of dealer leads
+      // Skip partner if going alone
+      let nextPlayer = (prev.dealer + 1) % 4
+      if (goAlone && POSITIONS[nextPlayer] === getPartner(currentPosition)) {
+        nextPlayer = (nextPlayer + 1) % 4
+      }
+      next.currentPlayer = nextPlayer
       return next
     })
   }, [currentPosition])
@@ -260,7 +302,12 @@ export default function EuchreBoard() {
         South: prev.hands.South.filter(c => c !== card)
       }
       next.phase = 'play'
-      next.currentPlayer = (prev.dealer + 1) % 4
+      // Skip partner if going alone
+      let nextPlayer = (prev.dealer + 1) % 4
+      if (next.goingAlone && POSITIONS[nextPlayer] === getPartner(next.alonePlayer)) {
+        nextPlayer = (nextPlayer + 1) % 4
+      }
+      next.currentPlayer = nextPlayer
       next.message = `${dealerPosition} discards and play begins`
       return next
     })
@@ -280,8 +327,9 @@ export default function EuchreBoard() {
       // Add to trick
       next.trick = [...prev.trick, { card, position: pos }]
       
-      // Check if trick is complete
-      if (next.trick.length === 4) {
+      // Check if trick is complete (3 cards if going alone, 4 otherwise)
+      const trickSize = prev.goingAlone ? 3 : 4
+      if (next.trick.length === trickSize) {
         // Determine winner
         const ledSuit = effectiveSuit(next.trick[0].card, prev.trump)
         const winner = next.trick.reduce((best, curr) => 
@@ -303,9 +351,11 @@ export default function EuchreBoard() {
           
           let points = 0
           if (makerTricks === 5) {
-            points = 2 // March
+            // March - 4 points if alone, 2 if not
+            points = next.goingAlone ? 4 : 2
           } else if (makerTricks >= 3) {
-            points = 1 // Made it
+            // Made it - 1 point (or 2 if alone with 3-4 tricks)
+            points = next.goingAlone ? 2 : 1
           } else {
             // Euchred
             points = -2
@@ -316,7 +366,8 @@ export default function EuchreBoard() {
           
           if (points > 0) {
             next.score = { ...prev.score, [makerTeam]: prev.score[makerTeam] + points }
-            next.message = `${makerTeam} wins ${points} point${points > 1 ? 's' : ''}`
+            const aloneMsg = next.goingAlone ? ' (alone!)' : ''
+            next.message = `${makerTeam} wins ${points} point${points > 1 ? 's' : ''}${aloneMsg}`
           }
           
           next.phase = 'handEnd'
@@ -331,8 +382,12 @@ export default function EuchreBoard() {
         return next
       }
       
-      // Next player's turn
-      next.currentPlayer = (prev.currentPlayer + 1) % 4
+      // Next player's turn - skip partner if going alone
+      let nextPlayer = (prev.currentPlayer + 1) % 4
+      if (prev.goingAlone && POSITIONS[nextPlayer] === getPartner(prev.alonePlayer)) {
+        nextPlayer = (nextPlayer + 1) % 4
+      }
+      next.currentPlayer = nextPlayer
       return next
     })
   }, [])
@@ -342,8 +397,10 @@ export default function EuchreBoard() {
     if (game.phase === 'bid1' && !isHumanTurn) {
       aiTimerRef.current = setTimeout(() => {
         const decision = aiBid(game.hands[currentPosition], game.upcard, currentPosition, dealerPosition, false)
-        if (decision === 'order') {
-          handleBid('order')
+        if (decision === 'alone') {
+          handleBid('order', true)
+        } else if (decision === 'order') {
+          handleBid('order', false)
         } else {
           handleBid('pass')
         }
@@ -353,8 +410,10 @@ export default function EuchreBoard() {
         const decision = aiBid(game.hands[currentPosition], game.upcard, currentPosition, dealerPosition, true)
         if (decision === 'pass') {
           handleBid('pass')
+        } else if (typeof decision === 'object') {
+          handleCallSuit(decision.suit, decision.alone)
         } else {
-          handleCallSuit(decision)
+          handleCallSuit(decision, false)
         }
       }, 1000)
     } else if (game.phase === 'play' && !isHumanTurn) {
@@ -375,7 +434,10 @@ export default function EuchreBoard() {
       const next = { ...prev }
       next.trick = []
       next.phase = 'play'
-      // currentPlayer already set to trick winner
+      // Skip partner if going alone
+      if (next.goingAlone && POSITIONS[next.currentPlayer] === getPartner(next.alonePlayer)) {
+        next.currentPlayer = (next.currentPlayer + 1) % 4
+      }
       return next
     })
   }, [])
@@ -404,6 +466,8 @@ export default function EuchreBoard() {
         trick: [],
         tricksWon: { NS: 0, EW: 0 },
         passes: 0,
+        goingAlone: false,
+        alonePlayer: null,
         message: '',
         handNumber: prev.handNumber + 1,
       }
@@ -453,6 +517,7 @@ export default function EuchreBoard() {
   }
   
   const isGameOver = game.score.NS >= 10 || game.score.EW >= 10
+  const partner = game.alonePlayer ? getPartner(game.alonePlayer) : null
   
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-5xl">
@@ -466,6 +531,7 @@ export default function EuchreBoard() {
         <div className="text-sm opacity-70">
           Hand {game.handNumber} • Dealer: {dealerPosition}
           {game.trump && ` • Trump: ${game.trump}`}
+          {game.goingAlone && ` • ${game.alonePlayer} going alone!`}
         </div>
       </div>
       
@@ -518,10 +584,15 @@ export default function EuchreBoard() {
           </div>
           
           {isHumanTurn && game.phase === 'bid1' && (
-            <div className="flex gap-3">
-              <button onClick={() => handleBid('order')} className="btn-primary">
-                Order Up
-              </button>
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button onClick={() => handleBid('order', false)} className="btn-primary">
+                  Order Up
+                </button>
+                <button onClick={() => handleBid('order', true)} className="btn-primary" style={{ background: '#dc2626' }}>
+                  Order Up Alone
+                </button>
+              </div>
               <button onClick={() => handleBid('pass')} className="btn-ghost">
                 Pass
               </button>
@@ -535,11 +606,24 @@ export default function EuchreBoard() {
                 {SUITS.filter(s => s !== game.upcard.suit).map(suit => (
                   <button
                     key={suit}
-                    onClick={() => handleCallSuit(suit)}
+                    onClick={() => handleCallSuit(suit, false)}
                     className="btn-primary"
                     style={{ fontSize: 24 }}
                   >
                     {suit}
+                  </button>
+                ))}
+              </div>
+              <div>Or call alone:</div>
+              <div className="flex gap-2">
+                {SUITS.filter(s => s !== game.upcard.suit).map(suit => (
+                  <button
+                    key={`alone-${suit}`}
+                    onClick={() => handleCallSuit(suit, true)}
+                    className="btn-primary"
+                    style={{ fontSize: 24, background: '#dc2626' }}
+                  >
+                    {suit} Alone
                   </button>
                 ))}
               </div>
@@ -571,11 +655,13 @@ export default function EuchreBoard() {
             <div className="font-semibold">
               North {game.dealer === 2 && '(D)'}
               {game.currentPlayer === 2 && game.phase === 'play' && ' 👈'}
+              {partner === 'North' && ' (sitting out)'}
             </div>
             <div className="flex gap-1">
-              {game.hands.North.map((_, i) => 
+              {partner !== 'North' && game.hands.North.map((_, i) => 
                 <div key={i} style={{ width: 70, height: 100, border: '2px solid #333', borderRadius: 8, background: '#1e40af' }} />
               )}
+              {partner === 'North' && <div style={{ fontSize: '2rem', opacity: 0.5 }}>—</div>}
             </div>
           </div>
           
@@ -585,11 +671,13 @@ export default function EuchreBoard() {
               <div className="font-semibold">
                 West {game.dealer === 1 && '(D)'}
                 {game.currentPlayer === 1 && game.phase === 'play' && ' 👈'}
+                {partner === 'West' && ' (sitting out)'}
               </div>
               <div className="flex gap-1">
-                {game.hands.West.map((_, i) => 
+                {partner !== 'West' && game.hands.West.map((_, i) => 
                   <div key={i} style={{ width: 70, height: 100, border: '2px solid #333', borderRadius: 8, background: '#1e40af' }} />
                 )}
+                {partner === 'West' && <div style={{ fontSize: '2rem', opacity: 0.5 }}>—</div>}
               </div>
             </div>
             
@@ -632,11 +720,13 @@ export default function EuchreBoard() {
               <div className="font-semibold">
                 East {game.dealer === 3 && '(D)'}
                 {game.currentPlayer === 3 && game.phase === 'play' && ' 👈'}
+                {partner === 'East' && ' (sitting out)'}
               </div>
               <div className="flex gap-1">
-                {game.hands.East.map((_, i) => 
+                {partner !== 'East' && game.hands.East.map((_, i) => 
                   <div key={i} style={{ width: 70, height: 100, border: '2px solid #333', borderRadius: 8, background: '#1e40af' }} />
                 )}
+                {partner === 'East' && <div style={{ fontSize: '2rem', opacity: 0.5 }}>—</div>}
               </div>
             </div>
           </div>
@@ -646,9 +736,10 @@ export default function EuchreBoard() {
             <div className="font-semibold">
               South (You) {game.dealer === 0 && '(D)'}
               {game.currentPlayer === 0 && game.phase === 'play' && ' 👈'}
+              {partner === 'South' && ' (sitting out)'}
             </div>
             <div className="flex gap-2">
-              {game.hands.South.map((card, idx) => {
+              {partner !== 'South' && game.hands.South.map((card, idx) => {
                 const ledSuit = game.trick.length > 0 ? effectiveSuit(game.trick[0].card, game.trump) : null
                 const canPlay = isHumanTurn && game.phase === 'play' && canPlayCard(card, game.hands.South, ledSuit, game.trump)
                 return renderCard(
@@ -659,6 +750,7 @@ export default function EuchreBoard() {
                   `south-${idx}`
                 )
               })}
+              {partner === 'South' && <div style={{ fontSize: '2rem', opacity: 0.5 }}>You're sitting out</div>}
             </div>
           </div>
         </div>
@@ -668,6 +760,7 @@ export default function EuchreBoard() {
       <div className="text-center text-sm opacity-70 max-w-2xl">
         <p>Euchre: 24-card trick-taking game. Teams North/South vs East/West. First to 10 points wins.</p>
         <p>Trump suit is chosen by bidding. Follow suit when able. Right bower (J♠ when ♠ is trump) is highest, left bower (J♣) is second.</p>
+        <p>Go alone for 4 points if you win all 5 tricks, 2 points for 3-4 tricks. Partner sits out when you go alone.</p>
       </div>
     </div>
   )
