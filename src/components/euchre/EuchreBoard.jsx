@@ -527,24 +527,16 @@ export default function EuchreBoard() {
     if (state.phase !== 'play') return
     
     const expectedTrickSize = state.alonePlayer !== null ? 3 : 4
-    if (state.trick.length !== expectedTrickSize) return
+    if (state.trick.length < expectedTrickSize) return
     
-    // Capture state values at trick completion time
-    const currentTrick = state.trick
-    const currentTrump = state.trump
-    const currentHands = state.hands
-    const currentTricksWon = state.tricksWon
-    const currentCaller = state.caller
-    const currentScore = state.score
-    const currentAlonePlayer = state.alonePlayer
-    
-    const winner = trickWinner(currentTrick, currentTrump)
+    const winner = trickWinner(state.trick, state.trump)
     const winnerIdx = POSITIONS.indexOf(winner)
     const winnerTeam = winnerIdx % 2
     
-    const newTricksWon = [...currentTricksWon]
+    const newTricksWon = [...state.tricksWon]
     newTricksWon[winnerTeam]++
     
+    // Check if active players are out of cards
     const activePlayers = [0, 1, 2, 3].filter(p => {
       if (state.alonePlayer === null) return true
       const aloneTeam = state.alonePlayer % 2
@@ -552,29 +544,29 @@ export default function EuchreBoard() {
       return !(aloneTeam === pTeam && p !== state.alonePlayer)
     })
     
-    const allHandsEmpty = activePlayers.every(p => currentHands[p].length === 0)
+    const allHandsEmpty = activePlayers.every(p => state.hands[p].length === 0)
     
-    const timer = setTimeout(() => {
-      if (allHandsEmpty) {
-        const callerTeam = currentCaller % 2
-        const callerTricks = newTricksWon[callerTeam]
+    if (allHandsEmpty) {
+      const callerTeam = state.caller % 2
+      const callerTricks = newTricksWon[callerTeam]
+      
+      let points = 0
+      let msg = ''
+      
+      if (callerTricks >= 3) {
+        if (callerTricks === 5) {
+          points = state.alonePlayer !== null ? 4 : 2
+          msg = state.alonePlayer !== null ? 'March (alone) - 4 points!' : 'March - 2 points!'
+        } else {
+          points = 1
+          msg = '1 point'
+        }
         
-        let points = 0
-        let msg = ''
+        const newScore = [...state.score]
+        newScore[callerTeam] += points
         
-        if (callerTricks >= 3) {
-          if (callerTricks === 5) {
-            points = currentAlonePlayer !== null ? 4 : 2
-            msg = currentAlonePlayer !== null ? 'March (alone) - 4 points!' : 'March - 2 points!'
-          } else {
-            points = 1
-            msg = '1 point'
-          }
-          
-          const newScore = [...currentScore]
-          newScore[callerTeam] += points
-          
-          if (newScore[callerTeam] >= 10) {
+        if (newScore[callerTeam] >= 10) {
+          setTimeout(() => {
             setState(s => ({
               ...s,
               phase: 'gameEnd',
@@ -583,24 +575,28 @@ export default function EuchreBoard() {
               trick: [],
               message: `Team ${callerTeam === 0 ? 'North/South' : 'East/West'} wins the game!`,
             }))
-          } else {
+          }, 2000)
+        } else {
+          setTimeout(() => {
             setState(s => ({
               ...s,
               phase: 'handEnd',
               score: newScore,
               tricksWon: newTricksWon,
               trick: [],
-              message: `${POSITIONS[currentCaller]} team: ${msg}. Click Deal for next hand.`,
+              message: `${POSITIONS[s.caller]} team: ${msg}. Click Deal for next hand.`,
             }))
-          }
-        } else {
-          points = 2
-          msg = 'Euchred! 2 points to opponents!'
-          
-          const newScore = [...currentScore]
-          newScore[1 - callerTeam] += points
-          
-          if (newScore[1 - callerTeam] >= 10) {
+          }, 2000)
+        }
+      } else {
+        points = 2
+        msg = 'Euchred! 2 points to opponents!'
+        
+        const newScore = [...state.score]
+        newScore[1 - callerTeam] += points
+        
+        if (newScore[1 - callerTeam] >= 10) {
+          setTimeout(() => {
             setState(s => ({
               ...s,
               phase: 'gameEnd',
@@ -609,7 +605,9 @@ export default function EuchreBoard() {
               trick: [],
               message: `Team ${1 - callerTeam === 0 ? 'North/South' : 'East/West'} wins the game!`,
             }))
-          } else {
+          }, 2000)
+        } else {
+          setTimeout(() => {
             setState(s => ({
               ...s,
               phase: 'handEnd',
@@ -618,9 +616,11 @@ export default function EuchreBoard() {
               trick: [],
               message: `${msg} Click Deal for next hand.`,
             }))
-          }
+          }, 2000)
         }
-      } else {
+      }
+    } else {
+      setTimeout(() => {
         setState(s => ({
           ...s,
           trick: [],
@@ -628,12 +628,9 @@ export default function EuchreBoard() {
           currentPlayer: winnerIdx,
           message: `${winner} won the trick`,
         }))
-      }
-    }, 1500)
-    
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.trick.length, state.phase, state.alonePlayer])
+      }, 1500)
+    }
+  }, [state.trick, state.phase, state.trump, state.hands, state.tricksWon, state.caller, state.alonePlayer, state.score])
   
   const handleNextHand = useCallback(() => {
     setState(s => ({
@@ -765,16 +762,16 @@ export default function EuchreBoard() {
         
         {/* East */}
         <div className="absolute right-4 flex flex-col gap-2">
-          {!isSittingOut(1) && state.hands[1].map((_, idx) => renderCardBack(`east-${idx}`))}
-          {isSittingOut(1) && (
+          {!isSittingOut(3) && state.hands[3].map((_, idx) => renderCardBack(`east-${idx}`))}
+          {isSittingOut(3) && (
             <div className="text-white text-sm font-semibold opacity-75">Sitting out</div>
           )}
         </div>
         
         {/* West */}
         <div className="absolute left-4 flex flex-col gap-2">
-          {!isSittingOut(3) && state.hands[3].map((_, idx) => renderCardBack(`west-${idx}`))}
-          {isSittingOut(3) && (
+          {!isSittingOut(1) && state.hands[1].map((_, idx) => renderCardBack(`west-${idx}`))}
+          {isSittingOut(1) && (
             <div className="text-white text-sm font-semibold opacity-75">Sitting out</div>
           )}
         </div>
