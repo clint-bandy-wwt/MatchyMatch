@@ -107,7 +107,7 @@ function canPlayCard(card, hand, leadSuit, trump) {
 
 // ── AI Logic ─────────────────────────────────────────────────────────────────
 
-function aiShouldOrderUp(hand, upcard, position, dealer, isRound1) {
+function _aiShouldOrderUp(hand, upcard, position, dealer) {
   // Simple AI: order up if has 2+ trump including face cards or bowers
   const trump = upcard.suit
   const trumpCards = hand.filter(c => getEffectiveSuit(c, trump) === trump)
@@ -158,7 +158,7 @@ function aiChooseDiscard(hand, trump) {
   })
 }
 
-function aiPlayCard(hand, currentTrick, trump, alonePlayer, position) {
+function aiPlayCard(hand, currentTrick, trump) {
   const leadSuit = currentTrick.length > 0 ? getEffectiveSuit(currentTrick[0].card, trump) : null
   const playable = hand.filter(c => canPlayCard(c, hand, leadSuit, trump))
   
@@ -251,57 +251,6 @@ export default function EuchreBoard() {
       return () => clearTimeout(timer)
     }
   }, [state.message])
-  
-  // ── AI Actions ───────────────────────────────────────────────────────────────
-  
-  useEffect(() => {
-    if (currentPos === 'South') return // Human player
-    
-    clearTimeout(aiTimeoutRef.current)
-    
-    if (state.phase === 'bidding-round1') {
-      aiTimeoutRef.current = setTimeout(() => {
-        handleBidRound1(false)
-      }, 800)
-    } else if (state.phase === 'bidding-round2') {
-      aiTimeoutRef.current = setTimeout(() => {
-        handleBidRound2(null)
-      }, 800)
-    } else if (state.phase === 'discard' && currentPos === dealerPos) {
-      aiTimeoutRef.current = setTimeout(() => {
-        const card = aiChooseDiscard(state.hands[dealerPos], state.trump)
-        handleDiscard(card)
-      }, 800)
-    } else if (state.phase === 'playing') {
-      // Check if current player is skipped due to going alone
-      if (state.alonePlayer) {
-        const makerTeam = state.maker === 'North' || state.maker === 'South' ? 'North-South' : 'East-West'
-        const currentTeam = currentPos === 'North' || currentPos === 'South' ? 'North-South' : 'East-West'
-        const isPartner = makerTeam === currentTeam && currentPos !== state.maker
-        
-        if (isPartner) {
-          // Skip this player
-          aiTimeoutRef.current = setTimeout(() => {
-            advanceToNextPlayer()
-          }, 400)
-          return
-        }
-      }
-      
-      aiTimeoutRef.current = setTimeout(() => {
-        const card = aiPlayCard(
-          state.hands[currentPos],
-          state.currentTrick,
-          state.trump,
-          state.alonePlayer,
-          currentPos
-        )
-        handlePlayCard(card)
-      }, 1000)
-    }
-    
-    return () => clearTimeout(aiTimeoutRef.current)
-  }, [state.phase, state.currentPlayer, state.currentTrick, state.trump])
   
   // ── Bidding Round 1 ──────────────────────────────────────────────────────────
   
@@ -566,6 +515,55 @@ export default function EuchreBoard() {
     setAloneOption(false)
   }, [])
   
+  // ── AI Actions ───────────────────────────────────────────────────────────────
+  
+  useEffect(() => {
+    if (currentPos === 'South') return // Human player
+    
+    clearTimeout(aiTimeoutRef.current)
+    
+    if (state.phase === 'bidding-round1') {
+      aiTimeoutRef.current = setTimeout(() => {
+        handleBidRound1(false)
+      }, 800)
+    } else if (state.phase === 'bidding-round2') {
+      aiTimeoutRef.current = setTimeout(() => {
+        handleBidRound2(null)
+      }, 800)
+    } else if (state.phase === 'discard' && currentPos === dealerPos) {
+      aiTimeoutRef.current = setTimeout(() => {
+        const card = aiChooseDiscard(state.hands[dealerPos], state.trump)
+        handleDiscard(card)
+      }, 800)
+    } else if (state.phase === 'playing') {
+      // Check if current player is skipped due to going alone
+      if (state.alonePlayer) {
+        const makerTeam = state.maker === 'North' || state.maker === 'South' ? 'North-South' : 'East-West'
+        const currentTeam = currentPos === 'North' || currentPos === 'South' ? 'North-South' : 'East-West'
+        const isPartner = makerTeam === currentTeam && currentPos !== state.maker
+        
+        if (isPartner) {
+          // Skip this player
+          aiTimeoutRef.current = setTimeout(() => {
+            advanceToNextPlayer()
+          }, 400)
+          return
+        }
+      }
+      
+      aiTimeoutRef.current = setTimeout(() => {
+        const card = aiPlayCard(
+          state.hands[currentPos],
+          state.currentTrick,
+          state.trump
+        )
+        handlePlayCard(card)
+      }, 1000)
+    }
+    
+    return () => clearTimeout(aiTimeoutRef.current)
+  }, [state.phase, state.currentPlayer, state.currentTrick, state.trump, currentPos, dealerPos, state.hands, state.alonePlayer, state.maker, handleBidRound1, handleBidRound2, handleDiscard, advanceToNextPlayer, handlePlayCard])
+  
   // ── Render Helpers ───────────────────────────────────────────────────────────
   
   const renderCard = (card, onClick, selectable = false, small = false) => {
@@ -682,10 +680,6 @@ export default function EuchreBoard() {
       </div>
     )
   }
-  
-  const leadSuit = state.currentTrick.length > 0 
-    ? getEffectiveSuit(state.currentTrick[0].card, state.trump)
-    : null
   
   return (
     <div className="flex flex-col items-center gap-4 max-w-6xl w-full p-4">
