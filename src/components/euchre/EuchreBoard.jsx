@@ -266,6 +266,7 @@ export default function EuchreBoard() {
       setState(s => ({
         ...s,
         phase: 'discard',
+        currentPlayer: s.dealer,
         trump,
         maker,
         alonePlayer: goAlone ? maker : null,
