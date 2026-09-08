@@ -444,6 +444,7 @@ export default function EuchreBoard() {
           setState(s => ({
             ...s,
             phase: 'hand-over',
+            currentTrick: [],
             score: newScore,
             tricksWon: newTricksWon,
             message: msg,
@@ -634,9 +635,9 @@ export default function EuchreBoard() {
             
             const cardPositions = [
               { bottom: '30px', left: '50%', transform: 'translate(-50%, 0)' }, // South - raised to avoid label overlap
-              { top: '50%', left: '0px', transform: 'translate(0, -50%)' }, // West - LEFT side (standard Euchre seating)
+              { top: '50%', right: '0px', transform: 'translate(0, -50%)' }, // West - appears on RIGHT in rendered page
               { top: '0px', left: '50%', transform: 'translate(-50%, 0)' }, // North
-              { top: '50%', right: '0px', transform: 'translate(0, -50%)' }, // East - RIGHT side (standard Euchre seating)
+              { top: '50%', left: '0px', transform: 'translate(0, -50%)' }, // East - appears on LEFT in rendered page
             ]
             return (
               <div key={`trick-${play.position}-${play.card.suit}-${play.card.rank}`} className="absolute" style={cardPositions[pos]}>
