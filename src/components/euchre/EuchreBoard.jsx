@@ -611,23 +611,23 @@ export default function EuchreBoard() {
   
   const renderTrick = () => {
     if (state.currentTrick.length === 0 && !state.lastTrick) return null
-    
+
     const trickToShow = state.currentTrick.length > 0 ? state.currentTrick : state.lastTrick
     if (!trickToShow || trickToShow.length === 0) return null
-    
+
     return (
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="relative w-48 h-48">
+        <div className="relative" style={{ width: '300px', height: '300px' }}>
           {trickToShow.map((play) => {
             const pos = POSITIONS.indexOf(play.position)
             const cardPositions = [
-              { top: '60%', left: '50%', transform: 'translate(-50%, 0)' }, // South
-              { top: '50%', left: '0%', transform: 'translate(0, -50%)' }, // West
-              { top: '0%', left: '50%', transform: 'translate(-50%, 0)' }, // North
-              { top: '50%', left: '80%', transform: 'translate(0, -50%)' }, // East
+              { bottom: '0px', left: '50%', transform: 'translate(-50%, 0)' }, // South
+              { top: '50%', left: '0px', transform: 'translate(0, -50%)' }, // West
+              { top: '0px', left: '50%', transform: 'translate(-50%, 0)' }, // North
+              { top: '50%', right: '0px', transform: 'translate(0, -50%)' }, // East
             ]
             return (
-              <div key={`${play.position}-${play.card.suit}-${play.card.rank}`} className="absolute" style={cardPositions[pos]}>
+              <div key={`trick-${play.position}-${play.card.suit}-${play.card.rank}`} className="absolute" style={cardPositions[pos]}>
                 {renderCard(play.card, () => {}, false, true)}
               </div>
             )
