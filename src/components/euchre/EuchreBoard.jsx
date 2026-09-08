@@ -120,7 +120,7 @@ function _aiShouldOrderUp(hand, upcard, position, dealer) {
   return hasBower || faceCount >= threshold
 }
 
-function aiChooseTrump(hand, excludeSuit) {
+function _aiChooseTrump(hand, excludeSuit) {
   // Count strength in each suit
   const suitStrength = {}
   for (const suit of SUITS) {
@@ -293,6 +293,29 @@ export default function EuchreBoard() {
   
   // ── Bidding Round 2 ──────────────────────────────────────────────────────────
   
+  // ── Next Hand ────────────────────────────────────────────────────────────────
+  
+  const handleNextHand = useCallback(() => {
+    const newDealer = (state.dealer + 1) % 4
+    const deck = shuffleDeck(createDeck())
+    const hands = {
+      South: deck.slice(0, 5),
+      West: deck.slice(5, 10),
+      North: deck.slice(10, 15),
+      East: deck.slice(15, 20),
+    }
+    const upcard = deck[20]
+    
+    setState(s => ({
+      ...initState(),
+      dealer: newDealer,
+      currentPlayer: (newDealer + 1) % 4,
+      hands,
+      upcard,
+      score: s.score,
+    }))
+  }, [state])
+  
   const handleBidRound2 = useCallback((suit, goAlone = false) => {
     if (suit) {
       setState(s => ({
@@ -310,31 +333,13 @@ export default function EuchreBoard() {
       const nextPlayer = (state.currentPlayer + 1) % 4
       
       if (nextPlayer === (state.dealer + 1) % 4) {
-        // Everyone passed, dealer must call
-        if (currentPos === dealerPos) {
-          const aiSuit = aiChooseTrump(state.hands[dealerPos], state.upcard.suit)
-          if (aiSuit) {
-            setState(s => ({
-              ...s,
-              phase: 'playing',
-              trump: aiSuit,
-              maker: dealerPos,
-              currentPlayer: (s.dealer + 1) % 4,
-              trickLeader: (s.dealer + 1) % 4,
-              message: `${dealerPos} is forced to call ${SUIT_NAMES[aiSuit]}`,
-            }))
-          } else {
-            // Redeal (shouldn't happen with smart AI)
-            setState(initState())
-          }
-        } else {
-          setState(s => ({ ...s, currentPlayer: nextPlayer }))
-        }
+        // Everyone passed in both rounds, redeal
+        handleNextHand()
       } else {
         setState(s => ({ ...s, currentPlayer: nextPlayer }))
       }
     }
-  }, [state, currentPos, dealerPos])
+  }, [state, currentPos, handleNextHand])
   
   // ── Discard ──────────────────────────────────────────────────────────────────
   
@@ -418,7 +423,7 @@ export default function EuchreBoard() {
           msg = `${makerTeam} marches! +${points} points`
         } else if (makerTricks >= 3) {
           // Made it
-          const points = state.alonePlayer ? 2 : 1
+          const points = 1  // Always 1 point for making it (3-4 tricks)
           newScore[makerTeam] += points
           msg = `${makerTeam} makes it! +${points} point${points > 1 ? 's' : ''}`
         } else {
@@ -485,29 +490,6 @@ export default function EuchreBoard() {
       })
     }
   }, [state, currentPos])
-  
-  // ── Next Hand ────────────────────────────────────────────────────────────────
-  
-  const handleNextHand = useCallback(() => {
-    const newDealer = (state.dealer + 1) % 4
-    const deck = shuffleDeck(createDeck())
-    const hands = {
-      South: deck.slice(0, 5),
-      West: deck.slice(5, 10),
-      North: deck.slice(10, 15),
-      East: deck.slice(15, 20),
-    }
-    const upcard = deck[20]
-    
-    setState(s => ({
-      ...initState(),
-      dealer: newDealer,
-      currentPlayer: (newDealer + 1) % 4,
-      hands,
-      upcard,
-      score: s.score,
-    }))
-  }, [state])
   
   // ── New Game ─────────────────────────────────────────────────────────────────
   
@@ -636,17 +618,17 @@ export default function EuchreBoard() {
     return (
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="relative w-48 h-48">
-          {trickToShow.map((play, idx) => {
+          {trickToShow.map((play) => {
             const pos = POSITIONS.indexOf(play.position)
-            const positions = [
+            const cardPositions = [
               { top: '60%', left: '50%', transform: 'translate(-50%, 0)' }, // South
               { top: '50%', left: '0%', transform: 'translate(0, -50%)' }, // West
               { top: '0%', left: '50%', transform: 'translate(-50%, 0)' }, // North
               { top: '50%', left: '80%', transform: 'translate(0, -50%)' }, // East
             ]
             return (
-              <div key={idx} className="absolute" style={positions[pos]}>
-                {renderCard(play.card, null, false, true)}
+              <div key={`${play.position}-${play.card.suit}-${play.card.rank}`} className="absolute" style={cardPositions[pos]}>
+                {renderCard(play.card, () => {}, false, true)}
               </div>
             )
           })}
