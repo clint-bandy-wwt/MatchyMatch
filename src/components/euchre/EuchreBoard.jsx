@@ -619,12 +619,24 @@ export default function EuchreBoard() {
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="relative" style={{ width: '300px', height: '300px' }}>
           {trickToShow.map((play) => {
-            const pos = POSITIONS.indexOf(play.position)
+            // Handle both string positions ('North') and numeric indices (2)
+            let pos
+            if (typeof play.position === 'number') {
+              pos = play.position
+            } else {
+              pos = POSITIONS.indexOf(play.position)
+            }
+            
+            if (pos === -1 || pos === undefined || pos < 0 || pos > 3) {
+              console.warn('Invalid position in trick:', play.position, 'resolved to:', pos)
+              return null // Skip invalid positions
+            }
+            
             const cardPositions = [
-              { bottom: '0px', left: '50%', transform: 'translate(-50%, 0)' }, // South
-              { top: '50%', left: '0px', transform: 'translate(0, -50%)' }, // West
+              { bottom: '30px', left: '50%', transform: 'translate(-50%, 0)' }, // South - raised to avoid label overlap
+              { top: '50%', left: '0px', transform: 'translate(0, -50%)' }, // West - LEFT side (standard Euchre seating)
               { top: '0px', left: '50%', transform: 'translate(-50%, 0)' }, // North
-              { top: '50%', right: '0px', transform: 'translate(0, -50%)' }, // East
+              { top: '50%', right: '0px', transform: 'translate(0, -50%)' }, // East - RIGHT side (standard Euchre seating)
             ]
             return (
               <div key={`trick-${play.position}-${play.card.suit}-${play.card.rank}`} className="absolute" style={cardPositions[pos]}>
