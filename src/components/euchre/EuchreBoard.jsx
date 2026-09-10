@@ -479,7 +479,19 @@ export default function EuchreBoard() {
       
       setTimeout(() => {
         // Check if hand is over
-        if (newHands[PLAYERS[0]].length === 0) {
+        // When going alone, check if active players have cards, not all players
+        const activePlayers = alonePlayer 
+          ? PLAYERS.filter(p => {
+              const aloneTeam = TEAMS[alonePlayer]
+              const alonePartner = PLAYERS.find(pl => pl !== alonePlayer && TEAMS[pl] === aloneTeam)
+              return p !== alonePartner
+            })
+          : PLAYERS
+        
+        // Hand is over when any active player has no cards left
+        const handOver = activePlayers.some(p => newHands[p].length === 0)
+        
+        if (handOver) {
           endHand()
         } else {
           // Next trick
@@ -528,12 +540,19 @@ export default function EuchreBoard() {
   }, [gameState, currentPlayer, biddingRound, hands, upcard, dealer, passes])
   
   useEffect(() => {
-    if (gameState === 'playing' && currentPlayer !== 'South' && !trickWinner) {
+    if (gameState !== 'playing' || currentPlayer === 'South' || trickWinner) {
+      return
+    }
+    
+    // Don't play if this player has no cards (partner sitting out)
+    if (!hands[currentPlayer] || hands[currentPlayer].length === 0) {
+      return
+    }
+    
       aiTimeoutRef.current = setTimeout(() => {
         const card = aiChooseCard(hands[currentPlayer], leadSuit, trump, trick)
         playCard(currentPlayer, card)
       }, 1200)
-    }
     
     return () => clearTimeout(aiTimeoutRef.current)
   }, [gameState, currentPlayer, trickWinner, hands, leadSuit, trump, trick, alonePlayer, playCard])
@@ -737,32 +756,59 @@ export default function EuchreBoard() {
         <div className="relative bg-green-600 rounded-lg p-8 mb-4" style={{ minHeight: '400px' }}>
           {/* North (top) */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-center">
-            <div className="text-white font-bold mb-2">North</div>
-            <div className="flex justify-center">
-              {hands.North && hands.North.map((card, i) => (
-                <div key={i}>{renderCard(card, null, false, true)}</div>
-              ))}
-            </div>
+            {alonePlayer && TEAMS[alonePlayer] === 'NS' && alonePlayer !== 'North' ? (
+              <div>
+                <div className="text-white font-bold mb-2">North (sitting out)</div>
+                <div className="text-yellow-300 text-xs">Partner is going alone</div>
+              </div>
+            ) : (
+              <>
+                <div className="text-white font-bold mb-2">North</div>
+                <div className="flex justify-center">
+                  {hands.North && hands.North.map((card, i) => (
+                    <div key={i}>{renderCard(card, null, false, true)}</div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           
           {/* West (left) */}
           <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-            <div className="text-white font-bold mb-2">West</div>
-            <div className="flex flex-col items-center">
-              {hands.West && hands.West.map((card, i) => (
-                <div key={i} className="mb-1">{renderCard(card, null, false, true)}</div>
-              ))}
-            </div>
+            {alonePlayer && TEAMS[alonePlayer] === 'EW' && alonePlayer !== 'West' ? (
+              <div>
+                <div className="text-white font-bold mb-2">West (sitting out)</div>
+                <div className="text-yellow-300 text-xs">Partner is going alone</div>
+              </div>
+            ) : (
+              <>
+                <div className="text-white font-bold mb-2">West</div>
+                <div className="flex flex-col items-center">
+                  {hands.West && hands.West.map((card, i) => (
+                    <div key={i} className="mb-1">{renderCard(card, null, false, true)}</div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           
           {/* East (right) */}
           <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-            <div className="text-white font-bold mb-2">East</div>
-            <div className="flex flex-col items-center">
-              {hands.East && hands.East.map((card, i) => (
-                <div key={i} className="mb-1">{renderCard(card, null, false, true)}</div>
-              ))}
-            </div>
+            {alonePlayer && TEAMS[alonePlayer] === 'EW' && alonePlayer !== 'East' ? (
+              <div>
+                <div className="text-white font-bold mb-2">East (sitting out)</div>
+                <div className="text-yellow-300 text-xs">Partner is going alone</div>
+              </div>
+            ) : (
+              <>
+                <div className="text-white font-bold mb-2">East</div>
+                <div className="flex flex-col items-center">
+                  {hands.East && hands.East.map((card, i) => (
+                    <div key={i} className="mb-1">{renderCard(card, null, false, true)}</div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           
           {/* Center - Trick and Upcard */}
