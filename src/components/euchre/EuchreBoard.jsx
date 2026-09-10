@@ -308,10 +308,10 @@ export default function EuchreBoard() {
       }))
       setMessage(`${player} ordered up ${SUIT_NAMES[upcard.suit]}${goingAlone ? ' and is going alone!' : ''}`)
       
-      if (player === 'South' && !goingAlone) {
-        setAwaitingDiscard(true) // South ordered up, dealer needs to discard
+      if (dealer === 'South') {
+        setAwaitingDiscard(true) // Dealer is South, human needs to discard
       } else {
-        // AI will discard automatically
+        // AI dealer will discard automatically
         setTimeout(() => {
           const dealerHand = hands[dealer]
           const lowestCard = dealerHand.reduce((min, card) => 
@@ -512,7 +512,7 @@ export default function EuchreBoard() {
   // ── AI Logic ─────────────────────────────────────────────────────────────────
   
   useEffect(() => {
-    if (gameState === 'bidding' && currentPlayer !== 'South') {
+    if (gameState === 'bidding' && currentPlayer !== 'South' && !awaitingDiscard) {
       aiTimeoutRef.current = setTimeout(() => {
         if (biddingRound === 1) {
           const shouldOrder = aiShouldOrderUp(hands[currentPlayer], upcard, currentPlayer, dealer)
@@ -537,7 +537,7 @@ export default function EuchreBoard() {
     
     return () => clearTimeout(aiTimeoutRef.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState, currentPlayer, biddingRound, hands, upcard, dealer, passes])
+  }, [gameState, currentPlayer, biddingRound, hands, upcard, dealer, passes, awaitingDiscard])
   
   useEffect(() => {
     if (gameState !== 'playing' || currentPlayer === 'South' || trickWinner) {
@@ -815,7 +815,7 @@ export default function EuchreBoard() {
           <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <div className="flex flex-col items-center gap-2">
               {/* Upcard during bidding */}
-              {gameState === 'bidding' && upcard && (
+              {gameState === 'bidding' && upcard && !awaitingDiscard && (
                 <div className="mb-2">
                   <div className="text-white text-xs mb-1 text-center">Upcard</div>
                   {renderCard(upcard)}
@@ -824,13 +824,31 @@ export default function EuchreBoard() {
               
               {/* Trick */}
               {Object.keys(trick).length > 0 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {PLAYERS.map(player => trick[player] && (
-                    <div key={player} className="flex flex-col items-center">
-                      <div className="text-white text-xs">{player}</div>
-                      {renderCard(trick[player])}
+                <div className="relative w-48 h-48">
+                  {/* North - top */}
+                  {trick.North && (
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
+                      {renderCard(trick.North)}
                     </div>
-                  ))}
+                  )}
+                  {/* South - bottom */}
+                  {trick.South && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                      {renderCard(trick.South)}
+                    </div>
+                  )}
+                  {/* West - left */}
+                  {trick.West && (
+                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2">
+                      {renderCard(trick.West)}
+                    </div>
+                  )}
+                  {/* East - right */}
+                  {trick.East && (
+                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2">
+                      {renderCard(trick.East)}
+                    </div>
+                  )}
                 </div>
               )}
               
