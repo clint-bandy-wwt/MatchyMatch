@@ -386,6 +386,48 @@ export default function EuchreBoard() {
     setTimeout(() => startPlayPhaseInternal(dealer), 1500)
   }
   
+  // ── End Hand ─────────────────────────────────────────────────────────────────
+  
+  const endHand = useCallback(() => {
+    const makerTeam = TEAMS[maker]
+    const makerTricks = tricksWon[makerTeam]
+    
+    let points = 0
+    let winner = null
+    
+    if (makerTricks === 5) {
+      // March
+      points = alonePlayer ? 4 : 2
+      winner = makerTeam
+      setMessage(`${makerTeam} team marched! +${points} points`)
+    } else if (makerTricks >= 3) {
+      // Made it
+      points = 1
+      winner = makerTeam
+      setMessage(`${makerTeam} team made it! +${points} point`)
+    } else {
+      // Euchred
+      points = 2
+      winner = makerTeam === 'NS' ? 'EW' : 'NS'
+      setMessage(`${makerTeam} team got euchred! ${winner} team gets +${points} points`)
+    }
+    
+    const newScores = {
+      ...scores,
+      [winner]: scores[winner] + points
+    }
+    
+    setScores(newScores)
+    setRoundWinner(winner)
+    setRoundPoints(points)
+    
+    if (newScores.NS >= 10 || newScores.EW >= 10) {
+      setGameState('gameOver')
+    } else {
+      setGameState('roundOver')
+    }
+  }, [maker, tricksWon, alonePlayer, scores])
+  
   // ── Play Card ────────────────────────────────────────────────────────────────
   
   const playCard = useCallback((player, card) => {
@@ -453,49 +495,7 @@ export default function EuchreBoard() {
       const nextPlayer = activePlayers[(activePlayers.indexOf(player) + 1) % activePlayers.length]
       setCurrentPlayer(nextPlayer)
     }
-  }, [hands, trick, leadSuit, trump, alonePlayer])
-  
-  // ── End Hand ─────────────────────────────────────────────────────────────────
-  
-  const endHand = useCallback(() => {
-    const makerTeam = TEAMS[maker]
-    const makerTricks = tricksWon[makerTeam]
-    
-    let points = 0
-    let winner = null
-    
-    if (makerTricks === 5) {
-      // March
-      points = alonePlayer ? 4 : 2
-      winner = makerTeam
-      setMessage(`${makerTeam} team marched! +${points} points`)
-    } else if (makerTricks >= 3) {
-      // Made it
-      points = 1
-      winner = makerTeam
-      setMessage(`${makerTeam} team made it! +${points} point`)
-    } else {
-      // Euchred
-      points = 2
-      winner = makerTeam === 'NS' ? 'EW' : 'NS'
-      setMessage(`${makerTeam} team got euchred! ${winner} team gets +${points} points`)
-    }
-    
-    const newScores = {
-      ...scores,
-      [winner]: scores[winner] + points
-    }
-    
-    setScores(newScores)
-    setRoundWinner(winner)
-    setRoundPoints(points)
-    
-    if (newScores.NS >= 10 || newScores.EW >= 10) {
-      setGameState('gameOver')
-    } else {
-      setGameState('roundOver')
-    }
-  }, [maker, tricksWon, alonePlayer, scores])
+  }, [hands, trick, leadSuit, trump, alonePlayer, endHand])
   
   // ── AI Logic ─────────────────────────────────────────────────────────────────
   
@@ -524,25 +524,11 @@ export default function EuchreBoard() {
     }
     
     return () => clearTimeout(aiTimeoutRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState, currentPlayer, biddingRound, hands, upcard, dealer, passes])
   
   useEffect(() => {
     if (gameState === 'playing' && currentPlayer !== 'South' && !trickWinner) {
-      const activePlayers = alonePlayer 
-        ? PLAYERS.filter(p => {
-            const aloneTeam = TEAMS[alonePlayer]
-            const alonePartner = PLAYERS.find(pl => pl !== alonePlayer && TEAMS[pl] === aloneTeam)
-            return p !== alonePartner
-          })
-        : PLAYERS
-      
-      if (!activePlayers.includes(currentPlayer)) {
-        // Skip partner of alone player
-        const nextPlayer = activePlayers[(activePlayers.indexOf(currentPlayer) + 1) % activePlayers.length]
-        setCurrentPlayer(nextPlayer)
-        return
-      }
-      
       aiTimeoutRef.current = setTimeout(() => {
         const card = aiChooseCard(hands[currentPlayer], leadSuit, trump, trick)
         playCard(currentPlayer, card)
@@ -564,6 +550,7 @@ export default function EuchreBoard() {
         discardCard(lowestCard)
       }, 1500)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [awaitingDiscard, dealer, hands, trump, upcard])
   
   // ── Render Functions ─────────────────────────────────────────────────────────
