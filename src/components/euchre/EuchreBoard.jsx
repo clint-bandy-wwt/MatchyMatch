@@ -811,55 +811,57 @@ export default function EuchreBoard() {
             )}
           </div>
           
-          {/* Center - Trick and Upcard */}
-          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="flex flex-col items-center gap-2">
-              {/* Upcard during bidding */}
-              {gameState === 'bidding' && upcard && !awaitingDiscard && (
-                <div className="mb-2">
-                  <div className="text-white text-xs mb-1 text-center">Upcard</div>
-                  {renderCard(upcard)}
-                </div>
-              )}
-              
-              {/* Trick */}
-              {Object.keys(trick).length > 0 && (
-                <div className="relative w-48 h-48">
-                  {/* North - top */}
-                  {trick.North && (
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                      {renderCard(trick.North)}
-                    </div>
-                  )}
-                  {/* South - bottom */}
-                  {trick.South && (
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                      {renderCard(trick.South)}
-                    </div>
-                  )}
-                  {/* West - left */}
-                  {trick.West && (
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2">
-                      {renderCard(trick.West)}
-                    </div>
-                  )}
-                  {/* East - right */}
-                  {trick.East && (
-                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2">
-                      {renderCard(trick.East)}
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Tricks won */}
-              {gameState === 'playing' && (
-                <div className="mt-4 text-white text-xs text-center">
-                  <div>NS: {tricksWon.NS} | EW: {tricksWon.EW}</div>
-                </div>
-              )}
+          {/* Upcard in center during bidding */}
+          {gameState === 'bidding' && upcard && !awaitingDiscard && (
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <div className="text-white text-xs mb-1 text-center">Upcard</div>
+              {renderCard(upcard)}
             </div>
-          </div>
+          )}
+          
+          {/* Trick cards - positioned in cardinal directions */}
+          {Object.keys(trick).length > 0 && (
+            <>
+              {/* North's trick card */}
+              {trick.North && (
+                <div className="absolute top-24 left-1/2 transform -translate-x-1/2">
+                  <div className="text-white text-xs text-center mb-1">North</div>
+                  {renderCard(trick.North)}
+                </div>
+              )}
+              
+              {/* South's trick card */}
+              {trick.South && (
+                <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2">
+                  <div className="text-white text-xs text-center mb-1">South</div>
+                  {renderCard(trick.South)}
+                </div>
+              )}
+              
+              {/* West's trick card */}
+              {trick.West && (
+                <div className="absolute left-24 top-1/2 transform -translate-y-1/2">
+                  <div className="text-white text-xs text-center mb-1">West</div>
+                  {renderCard(trick.West)}
+                </div>
+              )}
+              
+              {/* East's trick card */}
+              {trick.East && (
+                <div className="absolute right-24 top-1/2 transform -translate-y-1/2">
+                  <div className="text-white text-xs text-center mb-1">East</div>
+                  {renderCard(trick.East)}
+                </div>
+              )}
+            </>
+          )}
+          
+          {/* Tricks won - center */}
+          {gameState === 'playing' && (
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xs text-center bg-green-700 bg-opacity-75 px-2 py-1 rounded">
+              <div>NS: {tricksWon.NS} | EW: {tricksWon.EW}</div>
+            </div>
+          )}
         </div>
         
         {/* South (player hand) */}
