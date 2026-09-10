@@ -847,17 +847,27 @@ export default function EuchreBoard() {
         {/* South (player hand) */}
         <div className="bg-green-900 rounded-lg p-4">
           <div className="text-white font-bold mb-2 text-center">Your Hand (South)</div>
+          
+          {/* Discard instruction when awaiting discard */}
+          {awaitingDiscard && dealer === 'South' && (
+            <div className="text-yellow-300 mb-2 text-center text-sm">Click a card to discard</div>
+          )}
+          
           <div className="flex justify-center flex-wrap gap-1">
             {hands.South && hands.South.map((card, i) => {
-              const canPlay = gameState === 'playing' && currentPlayer === 'South' && !trickWinner
+              // Can play during game, OR can click to discard during discard phase
+              const canDiscard = awaitingDiscard && dealer === 'South'
+              const canPlay = (gameState === 'playing' && currentPlayer === 'South' && !trickWinner) || canDiscard
               const isValid = canPlay && isValidPlay(card, hands.South, leadSuit, trump)
+              
+              const clickHandler = canDiscard ? (c) => discardCard(c) : (canPlay && isValid ? (c) => playCard('South', c) : null)
               
               return (
                 <div key={i}>
                   {renderCard(
                     card, 
-                    canPlay && isValid ? (c) => playCard('South', c) : null,
-                    !isValid
+                    clickHandler,
+                    canDiscard ? false : !isValid
                   )}
                 </div>
               )
@@ -865,7 +875,7 @@ export default function EuchreBoard() {
           </div>
           
           {/* Bidding Controls */}
-          {gameState === 'bidding' && currentPlayer === 'South' && (
+          {gameState === 'bidding' && currentPlayer === 'South' && !awaitingDiscard && (
             <div className="mt-4 flex justify-center gap-4 flex-wrap">
               {biddingRound === 1 ? (
                 <>
@@ -910,23 +920,6 @@ export default function EuchreBoard() {
                   )}
                 </>
               )}
-            </div>
-          )}
-          
-          {/* Discard Control */}
-          {awaitingDiscard && dealer === 'South' && (
-            <div className="mt-4 text-center">
-              <div className="text-yellow-300 mb-2">Click a card to discard</div>
-            </div>
-          )}
-          
-          {awaitingDiscard && dealer === 'South' && hands.South && hands.South.length === 6 && (
-            <div className="flex justify-center gap-1 mt-2">
-              {hands.South.map((card, i) => (
-                <div key={i}>
-                  {renderCard(card, (c) => discardCard(c), false)}
-                </div>
-              ))}
             </div>
           )}
         </div>
